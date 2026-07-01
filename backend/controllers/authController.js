@@ -13,9 +13,17 @@ const generateToken = (id) => {
 // @access  Public
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, confirmPassword, role } = req.body;
 
-    const user = await User.create({ name, email, password, role });
+    const userExists = await User.findOne({ email }); 
+    
+    if (userExists) { 
+      return res.status(400).json({ 
+        message: "User already exists", 
+      }); 
+    }
+
+    const user = await User.create({ name, email, password, confirmPassword, role });
 
     const token = generateToken(user._id);
 
