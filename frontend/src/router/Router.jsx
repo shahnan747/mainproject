@@ -12,6 +12,8 @@ import DeliveryDashboard from "../dashboard/DeliveryDashboard";
 import MyDeliveries from "../dashboard/MyDeliveries";
 import AgentDashboard from "../dashboard/AgentDashboard";
 import Layout from "../components/Layout";
+import AIPage from "../dashboard/AIPage";
+import Stores from "../dashboard/Stores";
 
 const router = createBrowserRouter([
     {
@@ -71,6 +73,22 @@ const router = createBrowserRouter([
     {
         path: "/deliveries",
         element: <MyDeliveries />
+    },
+    {
+        path: "/stores",
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <Stores />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: "/ai",
+        element: (
+            <ProtectedRoute allowedRoles={["admin", "agent"]}>
+                <AIPage />
+            </ProtectedRoute>
+        )
     },
 
 

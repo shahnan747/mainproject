@@ -14,13 +14,16 @@ export default function Sidebar() {
             { name: "Dashboard", path: "/dashboard" },
             { name: "Agent", path: "/agentdashboard" },
             { name: "Delivery", path: "/deliverydashboard" },
+            { name: "Stores", path: "/stores" },
             { name: "Assign Orders", path: "/assign" },
             { name: "Analytics", path: "/analytics" },
+            { name: "AI Suggest", path: "/ai" }, 
         ],
         agent: [
             { name: "Dashboard", path: "/agentdashboard" },
             { name: "Create Order", path: "/order" },
             { name: "Order History", path: "/history" },
+            { name: "AI Suggest", path: "/ai" }, 
         ],
         delivery: [
             { name: "Dashboard", path: "/deliverydashboard" },

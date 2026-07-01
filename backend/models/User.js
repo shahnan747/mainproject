@@ -21,6 +21,13 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+    confirmPassword: {
+      type: String, 
+      required: [true, "Confirm Password is required"], 
+      validate: { validator: function (value) { return value === this.password; },
+      message: "Passwords do not match", },
+    },
+
     role: {
       type: String,
       enum: ["admin", "field_agent", "delivery_personnel"],
@@ -38,7 +45,7 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  
+
 });
 
 // Compare password method
