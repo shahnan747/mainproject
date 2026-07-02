@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Order = require("../models/Order");
 const AIHistory = require("../models/AIHistory");
+const Product = require("../models/Product");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -42,7 +43,7 @@ const generateOrderSuggestion = async (req, res, next) => {
 
 Based on the following past orders from a store, suggest the quantities for the next order.
 Return ONLY a JSON array in this format (no extra text):
-[{"productName": "...", "suggestedQuantity": 0}]
+[{"productId": "...", "suggestedQuantity": 0}]
 
 Past Orders:
 ${orderSummary}
@@ -53,14 +54,22 @@ Provide smart suggestions based on average quantities ordered.`;
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
 
-    // Parse AI response
-    let suggestedItems = [];
-    try {
-      const cleaned = responseText.replace(/```json|```/g, "").trim();
-      suggestedItems = JSON.parse(cleaned);
-    } catch {
-      suggestedItems = [];
-    }
+    suggestedItems = JSON.parse(cleaned);
+
+    // Convert productName → productId
+    const products = await Product.find({});
+
+    suggestedItems = suggestedItems.map(item => {
+      const matchedProduct = products.find(
+        p => p.name.toLowerCase() === item.productName.toLowerCase()
+      );
+
+      return {
+        productId: matchedProduct ? matchedProduct._id : null,
+        productName: item.productName,
+        suggestedQuantity: item.suggestedQuantity,
+      };
+    });
 
     // Save to AI History
     await AIHistory.create({

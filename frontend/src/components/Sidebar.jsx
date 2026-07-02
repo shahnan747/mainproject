@@ -19,13 +19,13 @@ export default function Sidebar() {
             { name: "Analytics", path: "/analytics" },
             { name: "AI Suggest", path: "/ai" }, 
         ],
-        agent: [
+        field_agent: [
             { name: "Dashboard", path: "/agentdashboard" },
             { name: "Create Order", path: "/order" },
             { name: "Order History", path: "/history" },
             { name: "AI Suggest", path: "/ai" }, 
         ],
-        delivery: [
+        delivery_personnel: [
             { name: "Dashboard", path: "/deliverydashboard" },
             { name: "My Deliveries", path: "/deliveries" },
         ],

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { dummyStores } from "../data/dummyData";
 import { fetchGroceries } from "../services/productService";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { storeValidate, amountValidate } from "../utils/Validations";
+import api from "../api/api";
 
 export default function CreateOrder() {
+    const [stores, setStores] = useState([]);
     const [selectedStore, setSelectedStore] = useState("");
     const [storeSearch, setStoreSearch] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
@@ -13,8 +15,11 @@ export default function CreateOrder() {
     const [quantities, setQuantities] = useState({});
     const [visibleCount, setVisibleCount] = useState(3);
     const [loading, setLoading] = useState(true);
+    const [suggestedOrders, setSuggestedOrders] = useState([]);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const { storeId } = useParams();
     const selectedDate = location.state?.selectedDate;
 
     const [form, setForm] = useState({
@@ -25,6 +30,32 @@ export default function CreateOrder() {
         date: selectedDate || ""
     });
 
+    const fetchSuggestions = async () => {
+        try {
+            setLoadingSuggestions(true);
+
+            const res = await fetch("http://localhost:5000/api/ai/generate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ storeId }),
+            });
+
+            const data = await res.json();
+            setSuggestedOrders(data?.data?.suggestedItems || []);
+        } catch (err) {
+            console.error("Failed to fetch suggestions:", err);
+        } finally {
+            setLoadingSuggestions(false);
+        }
+    };
+
+    useEffect(() => {
+        if (storeId) fetchSuggestions();
+    }, [storeId]);
+
     useEffect(() => {
         const loadProducts = async () => {
             const data = await fetchGroceries();
@@ -32,11 +63,29 @@ export default function CreateOrder() {
             setLoading(false);
         };
         loadProducts();
+
+        const fetchStores = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await api.get("/stores", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                setStores(res.data.data || []);
+            } catch (err) {
+                console.error("Failed to fetch stores:", err);
+            }
+        };
+        fetchStores();
     }, []);
 
-    const filteredStores = dummyStores.filter((store) =>
-        store.name.toLowerCase().includes(storeSearch.toLowerCase())
+    const filteredStores = stores.filter((store) =>
+        store.name
+            .toLowerCase()
+            .includes(storeSearch.toLowerCase())
     );
+
 
     const handleQuantityChange = (id, delta) => {
         setQuantities((prev) => ({
@@ -49,31 +98,43 @@ export default function CreateOrder() {
         return total + (quantities[product.id] || 0) * product.price;
     }, 0);
 
-    const saveOrder = (statusType) => {
+    const saveOrder = async (statusType) => {
+        try {
+            if (!storeValidate(selectedStore)) return;
+            if (!amountValidate(totalAmount)) return;
 
-        if (!storeValidate(selectedStore)) return;
-        if (!amountValidate(totalAmount)) return;
+            const token = localStorage.getItem("token");
 
-        const newOrder = {
-            id: Date.now(),
-            store: selectedStore,
-            products: products.filter(p => quantities[p.id] > 0),
-            quantities,
-            amount: totalAmount,
-            date: form.date,
-            status: statusType,
-        };
+            const items = products
+                .filter((p) => quantities[p.id] > 0)
+                .map((p) => ({
+                    productId: p.id,
+                    quantity: quantities[p.id],
+                    price: p.price,
+                }));
 
-        const existingOrders =
-            JSON.parse(localStorage.getItem("orders")) || [];
+            const orderData = {
+                storeId: selectedStore._id,
+                items,
+                totalAmount,
+                status: statusType,
+                date: form.date,
+            };
 
-        localStorage.setItem(
-            "orders",
-            JSON.stringify([newOrder, ...existingOrders])
-        );
+            console.log("ORDER DATA:", orderData);
 
-        navigate("/dashboard");
+            await api.post("/orders", orderData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            navigate("/dashboard");
+        } catch (err) {
+            console.error("Failed to save order:", err);
+        }
     };
+
 
     return (
         <div className="min-h-screen bg-[#0a0f1e] text-white flex justify-center p-3 sm:p-6">
@@ -81,6 +142,12 @@ export default function CreateOrder() {
 
                 {/* Header */}
                 <div className="bg-white/5 border-b border-white/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <button
+                        onClick={() => navigate("/agentdashboard")}
+                        className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm transition w-full sm:w-auto"
+                    >
+                        Back
+                    </button>
                     <h1 className="text-2xl font-semibold text-yellow-400">
                         Create Order
                     </h1>
@@ -200,7 +267,7 @@ export default function CreateOrder() {
                         )}
                     </div>
 
-                    {/* Suggested Order */}
+                    {/* Suggested Order
                     <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
                         <h3 className="font-semibold mb-2 text-lg text-yellow-400">
                             💡 Suggested Order
@@ -214,6 +281,39 @@ export default function CreateOrder() {
 
                         <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black py-3 rounded-xl font-semibold transition">
                             Apply Suggestions
+                        </button>
+                    </div> */}
+
+                    {/* Suggested Order */}
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
+                        <h3 className="font-semibold mb-3 text-lg text-yellow-400">
+                            💡 Suggested Order
+                        </h3>
+
+                        {loadingSuggestions ? (
+                            <p className="text-white/60 text-sm">Generating AI suggestions...</p>
+                        ) : suggestedOrders.length === 0 ? (
+                            <p className="text-white/50 text-sm">
+                                No suggestions available yet.
+                            </p>
+                        ) : (
+                            <div className="flex flex-wrap gap-2 text-sm mb-4">
+                                {suggestedOrders.map((item, index) => (
+                                    <div key={index} className="bg-white/10 px-3 py-1 rounded-lg">
+                                        <span className="text-white">{item.productName}: </span>
+                                        <span className="text-yellow-400 font-semibold">
+                                            {item.suggestedQuantity}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={fetchSuggestions}
+                            className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black py-3 rounded-xl font-semibold transition"
+                        >
+                            Refresh Suggestions
                         </button>
                     </div>
 

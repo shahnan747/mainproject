@@ -46,7 +46,7 @@ const router = createBrowserRouter([
     {
         path: "/agentdashboard",
         element: (
-            <ProtectedRoute allowedRoles={["admin", "agent"]}>
+            <ProtectedRoute allowedRoles={["admin", "field_agent"]}>
                 <Layout>
                     <AgentDashboard />
                 </Layout>
@@ -56,7 +56,7 @@ const router = createBrowserRouter([
     {
         path: "/deliverydashboard",
         element: (
-            <ProtectedRoute allowedRoles={["admin", "delivery"]}>
+            <ProtectedRoute allowedRoles={["admin", "delivery_personnel"]}>
                 <Layout>
                     <DeliveryDashboard />
                 </Layout>
@@ -90,7 +90,7 @@ const router = createBrowserRouter([
     {
         path: "/ai",
         element: (
-            <ProtectedRoute allowedRoles={["admin", "agent"]}>
+            <ProtectedRoute allowedRoles={["admin", "field_agent"]}>
                 <AIPage />
             </ProtectedRoute>
         )

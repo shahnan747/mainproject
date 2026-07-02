@@ -1,23 +1,62 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import api from "../api/api";
 
 export default function AgentDashboard() {
     const navigate = useNavigate();
     const [date, setDate] = useState(new Date());
+    const [orders, setOrders] = useState([]); 
+    const [loading, setLoading] = useState(true);
 
-    const orders = JSON.parse(localStorage.getItem("orders")) || [];
+    useEffect(() => { 
+        const fetchOrders = async () => { 
+            try { 
+                const token = localStorage.getItem("token"); 
+                const res = await api.get("/orders", { 
+                    headers: { Authorization: `Bearer ${token}`, }, 
+                }); 
+                
+                console.log("ORDERS:", res.data); 
+                setOrders(res.data.data || []); 
+            } catch (err) { 
+                console.error("Failed to fetch orders:", err); 
+            } 
+            finally { setLoading(false); } 
+        }; 
+        fetchOrders(); 
+    }, []);
 
     const total = orders.length;
+
     const delivered = orders.filter(o => o.status === "Delivered").length;
+
     const pending = orders.filter(o => o.status === "Pending").length;
 
-    const preBookings = orders.map(o => o.date);
+    // Pre-booking dates 
+    const preBookings = orders.map((o) => 
+     o.date
+        ? new Date(o.date).toISOString().split("T")[0] 
+        : null 
+    );
 
     const selectedDate = date.toISOString().split("T")[0];
-    const selectedOrders = orders.filter(o => o.date === selectedDate);
 
+   const selectedOrders = orders.filter((o) => {  
+    if (!o.date) 
+        return false; 
+    const orderDate = new Date(o.date) .toISOString() .split("T")[0];
+    return orderDate === selectedDate; 
+   });
+
+   if (loading) {
+    return ( 
+    <div className="text-white p-6"> 
+    Loading dashboard... 
+    </div> 
+    ); 
+ }
     return (
         <div className="text-white p-4 sm:p-6">
 
