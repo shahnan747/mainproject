@@ -8,7 +8,7 @@ import api from "../api/api";
 
 export default function CreateOrder() {
     const [stores, setStores] = useState([]);
-    const [selectedStore, setSelectedStore] = useState("");
+    const [selectedStore, setSelectedStore] = useState([]);
     const [storeSearch, setStoreSearch] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
     const [products, setProducts] = useState([]);
@@ -21,6 +21,8 @@ export default function CreateOrder() {
     const location = useLocation();
     const { storeId } = useParams();
     const selectedDate = location.state?.selectedDate;
+
+    const aiData = location.state;
 
     const [form, setForm] = useState({
         storeName: "",
@@ -51,6 +53,18 @@ export default function CreateOrder() {
             setLoadingSuggestions(false);
         }
     };
+
+    useEffect(() => {
+        if (aiData?.suggestedItems) {
+            const formattedProducts = aiData.suggestedItems.map((item) => ({
+                productId: item.productId,
+                title: item.productName,
+                quantity: item.suggestedQuantity,
+            }));
+
+            setSelectedProducts(formattedProducts);
+        }
+    }, [aiData]);
 
     useEffect(() => {
         if (storeId) fetchSuggestions();
@@ -267,22 +281,6 @@ export default function CreateOrder() {
                         )}
                     </div>
 
-                    {/* Suggested Order
-                    <div className="bg-white/5 p-5 rounded-2xl border border-white/10">
-                        <h3 className="font-semibold mb-2 text-lg text-yellow-400">
-                            💡 Suggested Order
-                        </h3>
-
-                        <p className="text-sm mb-4 text-white/60 flex flex-wrap gap-2">
-                            Milk: <span className="text-yellow-400 font-semibold">12</span> &nbsp;
-                            Bread: <span className="text-yellow-400 font-semibold">6</span> &nbsp;
-                            Eggs: <span className="text-yellow-400 font-semibold">18</span>
-                        </p>
-
-                        <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black py-3 rounded-xl font-semibold transition">
-                            Apply Suggestions
-                        </button>
-                    </div> */}
 
                     {/* Suggested Order */}
                     <div className="bg-white/5 p-5 rounded-2xl border border-white/10">

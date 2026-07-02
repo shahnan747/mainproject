@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { generateAISuggestion, fetchAIHistory } from "../services/aiService";
 import { fetchStores } from "../services/storeService";
@@ -12,6 +13,8 @@ export default function AIPage() {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("suggest");
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const loadStores = async () => {
@@ -204,9 +207,13 @@ export default function AIPage() {
                                         <div className="pt-3">
                                             <button
                                                 onClick={() =>
-                                                    window.location.assign(
-                                                        `/order?storeId=${selectedStore}&ai=true`
-                                                    )
+                                                    navigate("/order", {
+                                                        state: {
+                                                            storeId: selectedStore,
+                                                            ai: true,
+                                                            suggestedItems: suggestion.suggestedItems,
+                                                        },
+                                                    })
                                                 }
                                                 className="w-full bg-[#f5c842] text-black font-semibold py-2.5 rounded-xl text-sm hover:bg-yellow-400 transition"
                                             >

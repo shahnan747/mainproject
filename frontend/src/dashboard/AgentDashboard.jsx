@@ -7,25 +7,25 @@ import api from "../api/api";
 export default function AgentDashboard() {
     const navigate = useNavigate();
     const [date, setDate] = useState(new Date());
-    const [orders, setOrders] = useState([]); 
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { 
-        const fetchOrders = async () => { 
-            try { 
-                const token = localStorage.getItem("token"); 
-                const res = await api.get("/orders", { 
-                    headers: { Authorization: `Bearer ${token}`, }, 
-                }); 
-                
-                console.log("ORDERS:", res.data); 
-                setOrders(res.data.data || []); 
-            } catch (err) { 
-                console.error("Failed to fetch orders:", err); 
-            } 
-            finally { setLoading(false); } 
-        }; 
-        fetchOrders(); 
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await api.get("/orders", {
+                    headers: { Authorization: `Bearer ${token}`, },
+                });
+
+                console.log("ORDERS:", res.data);
+                setOrders(res.data.data || []);
+            } catch (err) {
+                console.error("Failed to fetch orders:", err);
+            }
+            finally { setLoading(false); }
+        };
+        fetchOrders();
     }, []);
 
     const total = orders.length;
@@ -35,28 +35,21 @@ export default function AgentDashboard() {
     const pending = orders.filter(o => o.status === "Pending").length;
 
     // Pre-booking dates 
-    const preBookings = orders.map((o) => 
-     o.date
-        ? new Date(o.date).toISOString().split("T")[0] 
-        : null 
+    const preBookings = orders.map((o) =>
+        o.date
+            ? new Date(o.date).toISOString().split("T")[0]
+            : null
     );
 
     const selectedDate = date.toISOString().split("T")[0];
 
-   const selectedOrders = orders.filter((o) => {  
-    if (!o.date) 
-        return false; 
-    const orderDate = new Date(o.date) .toISOString() .split("T")[0];
-    return orderDate === selectedDate; 
-   });
+    const selectedOrders = orders.filter((o) => {
+        if (!o.date)
+            return false;
+        const orderDate = new Date(o.date).toISOString().split("T")[0];
+        return orderDate === selectedDate;
+    });
 
-   if (loading) {
-    return ( 
-    <div className="text-white p-6"> 
-    Loading dashboard... 
-    </div> 
-    ); 
- }
     return (
         <div className="text-white p-4 sm:p-6">
 

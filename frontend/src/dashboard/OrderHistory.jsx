@@ -19,8 +19,27 @@ export default function OrderHistory() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-    setOrders(savedOrders);
+    const fetchOrders = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/orders", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          setOrders(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   return (
@@ -57,7 +76,7 @@ export default function OrderHistory() {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                       <h3 className="font-semibold text-white">
-                        {order.store?.name}
+                        {order.storeId?.name}
                       </h3>
 
                       <span
@@ -72,23 +91,25 @@ export default function OrderHistory() {
 
                   {/* Amount + Date */}
                   <p className="text-gray-400 text-xs sm:text-sm text-gray-400">
-                    ₹{order.amount} • {order.date}
+                    ₹{order.totalAmount} • {new Date(order.createdAt).toLocaleDateString()}
                   </p>
 
                   {/* Products */}
                   <div className="text-xs sm:text-sm text-gray-300 flex flex-wrap gap-2">
-                    {order.products?.map((p) => (
+                    {order.items?.map((item) => (
                       <span
-                        key={p.id}
+                        key={item._id}
                         className="bg-white/10 px-2 py-1 rounded-md text-xs"
                       >
-                        {p.title}
+                        {item.productId?.name} ({item.quantity})
                       </span>
                     ))}
                   </div>
 
                   {/* Button */}
-                  <button className="bg-yellow-400 text-black px-4 py-2 rounded-xl hover:opacity-90 transition w-full sm:w-fit text-sm sm:text-base">
+                  <button
+                    onClick={() => navigate(`/orders/${order._id}`)}
+                    className="bg-yellow-400 text-black px-4 py-2 rounded-xl hover:opacity-90 transition w-full sm:w-fit text-sm sm:text-base">
                     View Details
                   </button>
                 </div>

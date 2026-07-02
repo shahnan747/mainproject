@@ -15,6 +15,7 @@ import Layout from "../components/Layout";
 import AIPage from "../dashboard/AIPage";
 import Stores from "../dashboard/Stores";
 import ForgotPassword from "../pages/ForgotPassword";
+import OrderDetails from "../pages/OrderDetails";
 
 const router = createBrowserRouter([
     {
@@ -30,8 +31,8 @@ const router = createBrowserRouter([
         element: <Login />
     },
     {
-        path:"/forgot-password",
-        element:<ForgotPassword/>
+        path: "/forgot-password",
+        element: <ForgotPassword />
     },
     {
         path: "/dashboard",
@@ -66,6 +67,16 @@ const router = createBrowserRouter([
     {
         path: "/history",
         element: <OrderHistory />
+    },
+    {
+        path: "/orders/:id",
+        element: (
+            <ProtectedRoute allowedRoles={["admin", "field_agent"]} >
+                <Layout>
+                    <OrderDetails />
+                </Layout>
+            </ProtectedRoute >
+        )
     },
     {
         path: "/assign",
