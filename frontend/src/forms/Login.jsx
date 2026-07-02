@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateLogin } from "../utils/Validations";
+import api from "../api/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,25 +14,40 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [loginError, setLoginError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validateLogin(form);
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length === 0) {
-      const users = JSON.parse(localStorage.getItem("users")) || [];
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
 
-      const user = users.find(
-        (u) => u.email === form.email && u.password === form.password
+    try {
+      const res = await api.post("/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
+
+      console.log("LOGIN RESPONSE:", res.data);
+
+      // Save JWT Token
+      localStorage.setItem("token", res.data.token);
+
+      // Save logged in user
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify(res.data.user)
       );
 
-      if (user) {
-        localStorage.setItem("currentUser", JSON.stringify(user));
-        navigate("/dashboard"); // redirect to dashboard
-      } else {
-        setLoginError("Invalid email or password");
-      }
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+
+      setLoginError(
+        err.response?.data?.message || "Invalid email or password"
+      );
     }
   };
 
@@ -41,6 +57,10 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="bg-white/5 border border-white/10 backdrop-blur p-8 rounded-2xl w-full max-w-md"
       >
+        <p onClick={() => navigate("/")} className="text-yellow-400 text-sm cursor-pointer hover:text-[#f5c842] mb-6" > 
+                    Back 
+        </p>
+        
         <h2 className="text-white text-2xl font-bold mb-6 text-center">
           Login
         </h2>
@@ -73,6 +93,13 @@ export default function Login() {
           </p>
         )}
 
+        <div className="text-right mb-4">
+          <span onClick={() => navigate("/forgot-password")}
+            className="text-sm text-[#f5c842] cursor-pointer hover:underline" >
+            Forgot Password?
+          </span>
+        </div>
+
         {/* Login Error */}
         {loginError && (
           <p className="text-red-400 text-sm mb-4 text-center">
@@ -84,6 +111,7 @@ export default function Login() {
         <button className="w-full bg-[#f5c842] text-[#0a0f1e] py-3 rounded-lg font-semibold hover:bg-yellow-300 transition">
           Login
         </button>
+
 
         {/* Signup link */}
         <p className="text-white/50 text-sm mt-4 text-center">

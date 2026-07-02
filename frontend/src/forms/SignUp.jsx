@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { validateSignup } from "../utils/Validations";
 import { useNavigate } from "react-router-dom";
+import api from "../api/api";
 
 export default function SignUp() {
     const [form, setForm] = useState({
@@ -14,7 +15,7 @@ export default function SignUp() {
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const validationErrors = validateSignup(form);
@@ -24,18 +25,27 @@ export default function SignUp() {
             return;
         }
 
-        if (Object.keys(validationErrors).length === 0) {
-            const users = JSON.parse(localStorage.getItem("users")) || [];
-            users.push(form);
-            localStorage.setItem("users", JSON.stringify(users));
+        try {
+            const res = await api.post("/auth/register", {
+                name: form.name, 
+                email: form.email, 
+                password: form.password,
+                confirmPassword: form.confirmPassword, 
+                role: form.role,
+            });
+            
+            console.log("Signup Success", res.data);
 
-            console.log("Signup Success");
+            navigate("/login");
+        }catch(err) {
+            console.error(err);
+
+           setErrors({
+            api: err.response?.data?.message || "Signup failed",
+           });
         }
-
-        navigate("/login")
-
-
-    };
+       
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#0a0f1e] px-6">
@@ -43,6 +53,10 @@ export default function SignUp() {
                 onSubmit={handleSubmit}
                 className="bg-white/5 border border-white/10 backdrop-blur p-8 rounded-2xl w-full max-w-md"
             >
+                <p onClick={() => navigate("/")} className="text-yellow-400 text-sm cursor-pointer hover:text-[#f5c842] mb-6" > 
+                    Back 
+                </p>
+                
                 <h2 className="text-white text-2xl font-bold mb-6 text-center">
                     Sign Up
                 </h2>
@@ -76,8 +90,8 @@ export default function SignUp() {
                     >
                         <option value="" className="text-black">Select Role</option>
                         <option value="admin" className="text-black">Administrator</option>
-                        <option value="agent" className="text-black">Field Sales Agent</option>
-                        <option value="delivery" className="text-black">Delivery Personnel</option>
+                        <option value="field_agent" className="text-black">Field Sales Agent</option>
+                        <option value="delivery_personnel" className="text-black">Delivery Personnel</option>
                     </select>
 
                     {/* Dropdown arrow */}

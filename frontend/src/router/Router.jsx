@@ -14,6 +14,7 @@ import AgentDashboard from "../dashboard/AgentDashboard";
 import Layout from "../components/Layout";
 import AIPage from "../dashboard/AIPage";
 import Stores from "../dashboard/Stores";
+import ForgotPassword from "../pages/ForgotPassword";
 
 const router = createBrowserRouter([
     {
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
     {
         path: "/login",
         element: <Login />
+    },
+    {
+        path:"/forgot-password",
+        element:<ForgotPassword/>
     },
     {
         path: "/dashboard",

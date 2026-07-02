@@ -83,4 +83,32 @@ const getMe = async (req, res) => {
   res.status(200).json({ success: true, user: req.user });
 };
 
-module.exports = { register, login, getMe };
+
+// Forgot Password
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // TEMPORARY VERSION
+    // Later you can add nodemailer + reset token
+
+    res.status(200).json({
+      message: "Password reset link sent successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+
+module.exports = { register, login, getMe, forgotPassword };
