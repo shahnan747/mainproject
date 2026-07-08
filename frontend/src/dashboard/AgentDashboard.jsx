@@ -1,14 +1,34 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import api from "../api/api";
+
+
 
 export default function AgentDashboard() {
     const navigate = useNavigate();
     const [date, setDate] = useState(new Date());
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const localDateKey = (d) => {
+        if (!d) return null;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    const orderDateKey = (dateStr) => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        if (isNaN(d)) return null;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -18,7 +38,7 @@ export default function AgentDashboard() {
                     headers: { Authorization: `Bearer ${token}`, },
                 });
 
-                console.log("ORDERS:", res.data);
+                console.log("ORDERS:", res.data.data);
                 setOrders(res.data.data || []);
             } catch (err) {
                 console.error("Failed to fetch orders:", err);
@@ -30,25 +50,28 @@ export default function AgentDashboard() {
 
     const total = orders.length;
 
-    const delivered = orders.filter(o => o.status === "Delivered").length;
+    const delivered = orders.filter(o => o.status === "delivered").length;
 
-    const pending = orders.filter(o => o.status === "Pending").length;
+    const pending = orders.filter(o => o.status !== "delivered").length;
 
-    // Pre-booking dates 
-    const preBookings = orders.map((o) =>
-        o.date
-            ? new Date(o.date).toISOString().split("T")[0]
-            : null
+    const ordersByDate = useMemo(() => {
+        const map = {};
+        orders.forEach((o) => {
+            const key = orderDateKey(o.orderDate);
+            if (!key) return;
+            if (!map[key]) map[key] = [];
+            map[key].push(o);
+        });
+        return map;
+    }, [orders]);
+
+    const preBookedDateKeys = useMemo(
+        () => new Set(Object.keys(ordersByDate)),
+        [ordersByDate]
     );
 
-    const selectedDate = date.toISOString().split("T")[0];
-
-    const selectedOrders = orders.filter((o) => {
-        if (!o.date)
-            return false;
-        const orderDate = new Date(o.date).toISOString().split("T")[0];
-        return orderDate === selectedDate;
-    });
+    const selectedDate = localDateKey(date);
+    const selectedOrders = ordersByDate[selectedDate] || [];
 
     return (
         <div className="text-white p-4 sm:p-6">
@@ -90,60 +113,85 @@ export default function AgentDashboard() {
                 <div className="bg-white/5 backdrop-blur p-5 rounded-2xl border border-white/10">
                     <h2 className="text-lg font-semibold mb-4">Pre-Booking Calendar</h2>
 
-                    <div className="w-full overflow-x-auto">
-                        <Calendar
-                            onChange={setDate}
-                            value={date}
-                            className="!bg-transparent !border-none text-whitew-full "
+                    {loading ? (
+                        <p className="text-white/40 text-sm">Loading orders...</p>
+                    ) : (
+                        <div className="w-full overflow-x-auto">
+                            <Calendar
+                                onChange={setDate}
+                                value={date}
+                                className="!bg-transparent !border-none text-white w-full"
 
-                            /* Add dot indicator for pre-bookings */
-                            tileContent={({ date, view }) => {
-                                if (view === "month") {
-                                    const d = date.toISOString().split("T")[0];
+                                /* Dot indicator for dates that already have an order */
+                                tileContent={({ date: tileDate, view }) => {
+                                    if (view !== "month") return null;
 
-                                    if (preBookings.includes(d)) {
-                                        return (
-                                            <div className="flex justify-center mt-1">
-                                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                            </div>
-                                        );
+                                    const key = localDateKey(tileDate);
+                                    if (!preBookedDateKeys.has(key)) return null;
+
+                                    const count = ordersByDate[key]?.length || 0;
+
+                                    return (
+                                        <div className="flex justify-center mt-1">
+                                            <div
+                                                className="w-2 h-2 bg-green-400 rounded-full"
+                                                title={`${count} order${count > 1 ? "s" : ""} booked`}
+                                            />
+                                        </div>
+                                    );
+                                }}
+
+                                /* Highlight booked dates and the currently selected date */
+                                tileClassName={({ date: tileDate, view }) => {
+                                    if (view !== "month") return "";
+
+                                    const key = localDateKey(tileDate);
+                                    const isBooked = preBookedDateKeys.has(key);
+                                    const isSelected = key === selectedDate;
+
+                                    if (isSelected) {
+                                        return "!bg-[#f5c842] !text-black rounded-lg font-semibold";
                                     }
-                                }
-                            }}
-
-                            /* Highlight selected date */
-                            tileClassName={({ date }) => {
-                                const d = date.toISOString().split("T")[0];
-                                const selected = date.toDateString() === new Date().toDateString();
-
-                                if (d === selectedDate) {
-                                    return "bg-[#f5c842] text-black rounded-lg";
-                                }
-                            }}
-                        />
-                    </div>
+                                    if (isBooked) {
+                                        return "!bg-green-400/10 !border !border-green-400/40 rounded-lg";
+                                    }
+                                    return "";
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <button
                         onClick={() =>
                             navigate("/order", { state: { selectedDate } })
                         }
-                        className="mt-4 w-full bg-[#f5c842] text-black py-2 text-sm sm:text-base font-medium hover:opacity-90"
+                        className="mt-4 w-full bg-[#f5c842] text-black py-2 text-sm sm:text-base font-medium hover:opacity-90 rounded-lg"
                     >
                         ➕ Book Order for {date.toDateString()}
                     </button>
 
-
                     {/* Orders on Selected Date */}
                     {selectedOrders.length > 0 && (
                         <div className="mt-4">
-                            <h3 className="text-sm mb-2 text-white/70">Orders:</h3>
+                            <h3 className="text-sm mb-2 text-white/70">
+                                Orders on {date.toDateString()}:
+                            </h3>
                             {selectedOrders.map((o, i) => (
-                                <div key={i} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs sm:text-sm text-white/60">
-                                    <span className="text-sm break-words">{o.store?.name}</span>
-                                    <span className="text-xs text-white/60">₹{o.amount}</span>
+                                <div
+                                    key={o._id || i}
+                                    className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-xs sm:text-sm text-white/60 border-b border-white/5 py-1"
+                                >
+                                    <span className="text-sm break-words">{o.storeId?.name}</span>
+                                    <span className="text-xs text-white/60">₹{o.totalAmount}</span>
                                 </div>
                             ))}
                         </div>
+                    )}
+
+                    {!loading && selectedOrders.length === 0 && (
+                        <p className="mt-4 text-xs text-white/40">
+                            No orders booked on {date.toDateString()}.
+                        </p>
                     )}
                 </div>
 
@@ -158,16 +206,16 @@ export default function AgentDashboard() {
                     ) : (
                         orders.slice(-5).reverse().map((order, index) => (
                             <div
-                                key={index}
+                                key={order._id || index}
                                 className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white/5 px-3 sm:px-4 py-3 rounded-lg mb-2"
                             >
                                 <div>
-                                    <p className="text-sm sm:text-base">{order.store?.name}</p>
-                                    <p className="text-xs text-white/40">₹{order.amount}</p>
+                                    <p className="text-sm sm:text-base">{order.storeId?.name}</p>
+                                    <p className="text-xs text-white/40">₹{order.totalAmount}</p>
                                 </div>
 
                                 <span
-                                    className={`text-xs px-2 sm:px-3 py-1 rounded-full ${order.status === "Delivered"
+                                    className={`text-xs px-2 sm:px-3 py-1 rounded-full ${order.status === "delivered"
                                         ? "bg-green-500/20 text-green-400"
                                         : "bg-yellow-500/20 text-yellow-400"
                                         }`}

@@ -13,7 +13,7 @@ router.use(protect);
 
 router.route("/")
   .get(getStores)
-  .post(authorize("admin"), createStore);
+  .post(authorize("admin", "field_agent"), createStore);
 
 router.route("/:id")
   .get(getStore)

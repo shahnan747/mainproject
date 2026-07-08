@@ -56,6 +56,11 @@ const createOrder = async (req, res, next) => {
   try {
     req.body.fieldAgentId = req.user._id;
 
+     if (req.body.date && !req.body.orderDate) {
+      req.body.orderDate = req.body.date;
+      delete req.body.date;
+    }
+
     const order = await Order.create(req.body);
     res.status(201).json({ success: true, data: order });
   } catch (error) {

@@ -1,12 +1,10 @@
 const BASE_URL = "http://localhost:5000/api";
 
-const getToken = () => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    return user?.token || "";
-};
+const getToken = () => localStorage.getItem("token");
 
 export const generateAISuggestion = async (storeId) => {
     try {
+
         const res = await fetch(`${BASE_URL}/ai/generate`, {
             method: "POST",
             headers: {

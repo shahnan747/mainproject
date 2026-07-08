@@ -16,6 +16,8 @@ import AIPage from "../dashboard/AIPage";
 import Stores from "../dashboard/Stores";
 import ForgotPassword from "../pages/ForgotPassword";
 import OrderDetails from "../pages/OrderDetails";
+import Product from "../dashboard/Product";
+import OfflineDrafts from "../pages/OfflineDrafts";
 
 const router = createBrowserRouter([
     {
@@ -43,6 +45,16 @@ const router = createBrowserRouter([
     {
         path: "/order",
         element: <CreateOrder />
+    },
+    {
+        path: "/offline-drafts",
+        element: <OfflineDrafts/>
+    },
+    {
+        path: "/product",
+        element: <ProtectedRoute>
+            <Product/>
+        </ProtectedRoute>
     },
     {
         path: "/agentdashboard",
@@ -91,7 +103,7 @@ const router = createBrowserRouter([
         element: <MyDeliveries />
     },
     {
-        path: "/stores",
+        path: "/add-stores",
         element: (
             <ProtectedRoute allowedRoles={["admin"]}>
                 <Stores />

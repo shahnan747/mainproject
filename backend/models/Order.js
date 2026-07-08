@@ -29,6 +29,11 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Field agent is required"],
     },
+    orderDate: {
+      type: Date,
+      required: true,
+      index: true,
+    },
     items: [orderItemSchema],
     totalAmount: {
       type: Number,
@@ -37,8 +42,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["collected", "assigned", "loaded", "delivered"],
-      default: "collected",
+      enum: ["draft","collected", "assigned", "loaded", "delivered"],
+      default: "draft",
     },
     paymentStatus: {
       type: String,

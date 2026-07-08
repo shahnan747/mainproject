@@ -55,7 +55,6 @@ export default function AIPage() {
     };
 
     const selectedStoreName = stores.find((s) => s._id === selectedStore)?.name || "";
-
     return (
         <Layout>
             <div className="p-6 text-white min-h-screen">
@@ -81,6 +80,8 @@ export default function AIPage() {
                                 setSuggestion(null);
                                 setHistory([]);
                                 setError("");
+
+                                localStorage.setItem("selectedStore",e.target.value);
                             }}
                             className="flex-1 bg-[#0a0f1e] border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#f5c842] transition"
                         >
@@ -206,7 +207,8 @@ export default function AIPage() {
                                         {/* Use Suggestion Button */}
                                         <div className="pt-3">
                                             <button
-                                                onClick={() =>
+                                                onClick={() => 
+
                                                     navigate("/order", {
                                                         state: {
                                                             storeId: selectedStore,

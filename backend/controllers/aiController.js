@@ -42,8 +42,14 @@ const generateOrderSuggestion = async (req, res, next) => {
     const prompt = `You are an AI assistant for a field sales order management system.
 
 Based on the following past orders from a store, suggest the quantities for the next order.
-Return ONLY a JSON array in this format (no extra text):
-[{"productId": "...", "suggestedQuantity": 0}]
+
+Return ONLY a JSON array in this format:
+[
+  {
+    "productName": "Rice",
+    "suggestedQuantity": 5
+  }
+]
 
 Past Orders:
 ${orderSummary}
@@ -54,7 +60,22 @@ Provide smart suggestions based on average quantities ordered.`;
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
 
-    suggestedItems = JSON.parse(cleaned);
+    const cleaned = responseText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    let suggestedItems = [];
+
+    try {
+      suggestedItems = JSON.parse(cleaned);
+    } catch (parseError) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to parse AI response",
+        raw: responseText,
+      });
+    }
 
     // Convert productName → productId
     const products = await Product.find({});
