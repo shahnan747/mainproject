@@ -114,24 +114,32 @@ const updateOrderStatus = async (req, res, next) => {
 // @access  Private (Admin)
 const assignOrder = async (req, res, next) => {
   try {
-    const { deliveryPersonnelId } = req.body;
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
+    const { orderIds, deliveryPersonnelId, route } = req.body;
+
+    const orders = await Order.updateMany(
       {
-        assignedDeliveryPersonnel: deliveryPersonnelId,
-        status: "assigned",
+        _id: { $in: orderIds },
       },
-      { new: true }
-    ).populate("assignedDeliveryPersonnel", "name email");
+      {
+        $set: {
+          assignedDeliveryPersonnel: deliveryPersonnelId,
+          route,
+          status: "assigned",
+        },
+      }
+    );
 
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-    res.status(200).json({ success: true, message: "Order assigned successfully", data: order });
+    res.status(200).json({
+      success: true,
+      message: "Orders assigned successfully",
+      data: orders,
+    });
   } catch (error) {
     next(error);
   }
 };
+
 
 // @desc    Delete order
 // @route   DELETE /api/orders/:id

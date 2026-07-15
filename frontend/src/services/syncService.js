@@ -22,7 +22,9 @@ export const syncOfflineDrafts = async () => {
 
                     storeId: draft.storeId,
 
-                    products: draft.items,
+                    fieldAgentId: draft.fieldAgentId,
+
+                    items: draft.items,
 
                     totalAmount: draft.totalAmount,
 

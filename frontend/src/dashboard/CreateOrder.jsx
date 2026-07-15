@@ -226,6 +226,7 @@ export default function CreateOrder() {
 
                 fieldAgentId: user?._id,
                 agentName: user?.name,
+
                 items: products
                     .filter(p => quantities[p._id] > 0)
                     .map(p => ({
@@ -234,6 +235,7 @@ export default function CreateOrder() {
                         quantity: quantities[p._id],
                         price: p.price,
                     })),
+                    
                 totalAmount,
                 status: statusType.toLowerCase(),
                 orderDate: form.orderDate,

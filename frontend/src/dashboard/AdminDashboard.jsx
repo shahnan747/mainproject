@@ -1,16 +1,51 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAnalyticsData } from "../utils/analytics";
+import { fetchAdminOrders } from "../services/adminService";
 
 export default function AdminDashboard() {
 
     const navigate = useNavigate();
 
-    const [analytics, setAnalytics] = useState(getAnalyticsData());
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setAnalytics(getAnalyticsData());
+
+        const loadOrders = async () => {
+
+            try {
+
+                const data = await fetchAdminOrders();
+
+                setOrders(data);
+
+            } catch (error) {
+
+                console.error(error);
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+
+        loadOrders();
+
     }, []);
+
+    const totalOrders = orders.length;
+
+
+    const revenue = orders.reduce(
+        (sum, order) => sum + (order.totalAmount || 0),
+        0
+    );
+
+
+    const profit = revenue * 0.1;
 
     return (
         <div className="flex min-h-screen bg-[#0a0f1e] text-white">
@@ -20,10 +55,10 @@ export default function AdminDashboard() {
                 <h1 className="text-xl sm:text-2xl font-semibold mb-6 text-yellow-400">Dashboard</h1>
 
                 {/* Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    <Card title="Orders" value={analytics.totalOrders} />
-                    <Card title="Revenue" value={`₹${analytics.revenue.toFixed(2)}`} />
-                    <Card title="Profit" value={`₹${analytics.profit.toFixed(2)}`} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-6">
+                    <Card title="Orders" value={totalOrders} />
+                    <Card title="Revenue" value={`₹${revenue.toFixed(2)}`} />
+                    <Card title="Profit" value={`₹${profit.toFixed(2)}`} />
                 </div>
 
                 {/* Orders Table */}
@@ -41,13 +76,13 @@ export default function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {analytics.orders.map((order) => (
-                                    <tr key={order.id} className="border-b border-white/5 hover:bg-white/5">
-                                        <td className="p-2 sm:p-3 text-xs sm:text-sm">{order.store?.name}</td>
-                                        <td className="p-2 sm:p-3 text-xs sm:text-sm">₹{order.amount}</td>
+                                {orders.map((order) => (
+                                    <tr key={order._id} className="border-b border-white/5 hover:bg-white/5">
+                                        <td className="p-2 sm:p-3 text-xs sm:text-sm">{order.storeId?.name}</td>
+                                        <td className="p-2 sm:p-3 text-xs sm:text-sm">₹{order.totalAmount}</td>
                                         <td className="p-2 sm:p-3 text-xs sm:text-sm">
                                             <span
-                                                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm ${order.status === "Collected"
+                                                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm ${order.status === "collected" || order.status === "draft"
                                                     ? "bg-green-500/20 text-green-400"
                                                     : "bg-yellow-500/20 text-yellow-400"
                                                     }`}
@@ -56,7 +91,7 @@ export default function AdminDashboard() {
                                             </span>
                                         </td>
                                         <td className="p-3">
-                                            {order.status === "Collected" ? (
+                                            {order.status === "collected" || order.status === "draft" ? (
                                                 <button
                                                     onClick={() => navigate("/assign", { state: { order } })}
                                                     className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm transition"

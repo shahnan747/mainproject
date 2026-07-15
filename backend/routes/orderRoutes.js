@@ -17,12 +17,15 @@ router.route("/")
   .get(getOrders)
   .post(authorize("admin", "field_agent"), createOrder);
 
+router.put("/assign", authorize("admin"), assignOrder);
+
+router.put("/:id/status", authorize("admin", "delivery_personnel"), updateOrderStatus);
+
 router.route("/:id")
   .get(getOrder)
   .put(authorize("admin", "field_agent"), updateOrder)
   .delete(authorize("admin"), deleteOrder);
 
-router.put("/:id/status", updateOrderStatus);
-router.put("/:id/assign", authorize("admin"), assignOrder);
+
 
 module.exports = router;

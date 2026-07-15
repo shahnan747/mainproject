@@ -83,6 +83,23 @@ const getMe = async (req, res) => {
   res.status(200).json({ success: true, user: req.user });
 };
 
+const getDeliveryPersonnel = async (req, res, next) => {
+  try {
+    const deliveryPersonnel = await User.find({
+      role: "delivery_personnel",
+      isActive: true
+    }).select("_id name email");
+
+    res.status(200).json({
+      success: true,
+      data: deliveryPersonnel
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 // Forgot Password
 const forgotPassword = async (req, res) => {
@@ -111,4 +128,4 @@ const forgotPassword = async (req, res) => {
 };
 
 
-module.exports = { register, login, getMe, forgotPassword };
+module.exports = { register, login, getMe, getDeliveryPersonnel, forgotPassword };

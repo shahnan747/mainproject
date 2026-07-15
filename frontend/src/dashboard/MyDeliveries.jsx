@@ -1,17 +1,26 @@
 import { useState, useEffect } from "react";
+import { fetchOrders, updateOrderStatus } from "../services/deliveryService";
 
 export default function MyDeliveries() {
     const [orders, setOrders] = useState([]);
 
     useEffect(() => {
-        const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-        setOrders(storedOrders);
+        loadOrders();
     }, []);
+
+    const loadOrders = async () => {
+        try {
+            const data = await fetchOrders();
+            setOrders(data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     //Group orders by route
     const groupedRoutes = {};
     orders
-        .filter(o => o.route)
+        .filter(order => order.route)
         .forEach(order => {
             if (!groupedRoutes[order.route]) {
                 groupedRoutes[order.route] = [];
@@ -19,14 +28,17 @@ export default function MyDeliveries() {
             groupedRoutes[order.route].push(order);
         });
 
-    //Mark Delivered
-    const markDelivered = (id) => {
-        const updatedOrders = orders.map(order =>
-            order.id === id ? { ...order, status: "Delivered" } : order
-        );
+    const markDelivered = async (id) => {
+        try {
+            await updateOrderStatus(id, "delivered");
 
-        setOrders(updatedOrders);
-        localStorage.setItem("orders", JSON.stringify(updatedOrders));
+            const data = await fetchOrders();
+            setOrders(data);
+
+        } catch (error) {
+            console.error(error);
+            alert("Failed to mark as delivered");
+        }
     };
 
     return (
@@ -54,34 +66,34 @@ export default function MyDeliveries() {
 
                             {/* Stores */}
                             <div className="space-y-3">
-                                {groupedRoutes[route].map((order, index) => (
+                                {groupedRoutes[route].map((order) => (
                                     <div
-                                        key={index}
+                                        key={order._id}
                                         className="flex flex-col mx-1 sm:mx-0 sm:flex-row sm:justify-between sm:items-center gap-3 bg-white/5 px-3 sm:px-4 py-3 rounded-xl border border-white/5 hover:bg-white/10 transition"
                                     >
                                         {/* LEFT */}
                                         <div className="w-full sm:w-auto">
                                             <p className="text-sm sm:text-base font-medium">
-                                                {order.store?.name}
+                                                {order.storeId?.name}
                                             </p>
 
                                             <p className="text-xs sm:text-sm text-white/50 break-words">
-                                                {order.products
-                                                    ?.map(p => p.title)
+                                                {order.items
+                                                    ?.map(item => item.productId?.name)
                                                     .join(", ") || "No items"}
                                             </p>
                                         </div>
 
                                         {/* RIGHT */}
                                         <button
-                                            onClick={() => markDelivered(order.id)}
-                                            disabled={order.status === "Delivered"}
+                                            onClick={() => markDelivered(order._id)}
+                                            disabled={order.status === "delivered"}
                                             className={`w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${order.status === "Delivered"
-                                                    ? "bg-green-500/20 text-green-400 cursor-not-allowed"
-                                                    : "bg-yellow-400 text-black hover:bg-yellow-300"
+                                                ? "bg-green-500/20 text-green-400 cursor-not-allowed"
+                                                : "bg-yellow-400 text-black hover:bg-yellow-300"
                                                 }`}
                                         >
-                                            {order.status === "Delivered"
+                                            {order.status === "delivered"
                                                 ? "Delivered"
                                                 : "Mark Delivered"}
                                         </button>

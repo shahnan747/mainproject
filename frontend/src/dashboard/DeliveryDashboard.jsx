@@ -1,29 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import { useNavigate } from "react-router-dom";
 import "react-calendar/dist/Calendar.css";
+import { fetchOrders } from "../services/deliveryService";
+
 
 export default function DeliveryDashboard() {
     const [date, setDate] = useState(new Date());
 
-    const orders = JSON.parse(localStorage.getItem("orders")) || [];
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const loadOrders = async () => {
+            try {
+                const data = await fetchOrders();
+                setOrders(data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadOrders();
+    }, []);
 
     // Stats
     const total = orders.length;
-    const delivered = orders.filter(o => o.status === "Delivered").length;
-    const assigned = orders.filter(o => o.status !== "Pending").length;
+    const delivered = orders.filter(o => o.status === "delivered").length;
+    const assigned = orders.filter(o => o.status === "assigned").length;
 
-    // Extract route dates
     const routeDates = orders
-        .filter(o => o.route) // only assigned routes
-        .map(o => o.date);
+        .filter(o => o.orderDate)
+        .map(o =>
+            new Date(o.orderDate)
+                .toISOString()
+                .split("T")[0]
+        );
 
     const selectedDate = date.toISOString().split("T")[0];
 
-    const selectedRoutes = orders.filter(
-        o => o.date === selectedDate && o.route
+    const selectedRoutes = orders.filter(o =>
+        o.orderDate &&
+        new Date(o.orderDate)
+            .toISOString()
+            .split("T")[0] === selectedDate
     );
+
+    const deliveredCount = selectedRoutes.filter(
+        order => order.status === "delivered"
+    ).length;
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0f1e]">
+                <p className="text-yellow-400 text-lg font-medium">
+                    Loading deliveries...
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="text-white p-4 sm:p-6">
@@ -72,17 +110,34 @@ export default function DeliveryDashboard() {
 
                             /* Show route assigned dates */
                             tileContent={({ date, view }) => {
-                                if (view === "month") {
-                                    const d = date.toISOString().split("T")[0];
+                                if (view !== "month") return null;
 
-                                    if (routeDates.includes(d)) {
-                                        return (
-                                            <div className="flex justify-center mt-1">
-                                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                            </div>
-                                        );
-                                    }
-                                }
+                                const currentDate = date.toISOString().split("T")[0];
+
+                                const dayOrders = orders.filter(
+                                    order =>
+                                        order.orderDate &&
+                                        new Date(order.orderDate)
+                                            .toISOString()
+                                            .split("T")[0] === currentDate
+                                );
+
+                                if (dayOrders.length === 0) return null;
+
+                                const allDelivered = dayOrders.every(
+                                    order => order.status === "delivered"
+                                );
+
+                                return (
+                                    <div className="flex justify-center mt-1">
+                                        <div
+                                            className={`w-2 h-2 rounded-full ${allDelivered
+                                                ? "bg-green-400"
+                                                : "bg-blue-400"
+                                                }`}
+                                        />
+                                    </div>
+                                );
                             }}
 
                             /* Highlight selected date */
@@ -98,9 +153,17 @@ export default function DeliveryDashboard() {
 
                     {/* Selected Date Routes */}
                     <div className="mt-4">
-                        <h3 className="text-sm mb-2 text-white/70">
-                            Routes on {date.toDateString()}
-                        </h3>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-sm text-white/70">
+                                Routes on {date.toDateString()}
+                            </h3>
+
+                            {selectedRoutes.length > 0 && (
+                                <span className="text-green-400 text-sm font-medium">
+                                    {deliveredCount} / {selectedRoutes.length} Delivered
+                                </span>
+                            )}
+                        </div>
 
                         {selectedRoutes.length === 0 ? (
                             <p className="text-white/40 text-sm">
@@ -112,7 +175,10 @@ export default function DeliveryDashboard() {
                                     key={i}
                                     className="flex flex-col sm:flex-row sm:justify-between gap-1 text-xs sm:text-sm text-white/70 mb-2"
                                 >
-                                    <span>{o.store?.name}</span>
+                                    <span>
+                                        {o.status === "delivered" ? "✅" : "🚚"}{" "}
+                                        {o.storeId?.name}
+                                    </span>
                                     <span className="text-blue-400">{o.route}</span>
                                 </div>
                             ))
@@ -131,15 +197,15 @@ export default function DeliveryDashboard() {
                             .filter(o => o.route)
                             .slice(-5)
                             .reverse()
-                            .map((order, index) => (
+                            .map((order) => (
                                 <div
-                                    key={index}
+                                    key={order._id}
                                     className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white/5 px-3 sm:px-4 py-3 rounded-lg mb-2"
                                 >
                                     <div>
-                                        <p className="text-sm sm:text-base">{order.store?.name}</p>
+                                        <p className="text-sm sm:text-base">{order.storeId?.name}</p>
                                         <p className="text-xs text-white/40">
-                                            ₹{order.amount}
+                                            ₹{order.totalAmount}
                                         </p>
                                     </div>
 
@@ -148,7 +214,7 @@ export default function DeliveryDashboard() {
                                             {order.route}
                                         </p>
                                         <span
-                                            className={`text-xs px-2 sm:px-3 py-1 rounded-full ${order.status === "Delivered"
+                                            className={`text-xs px-2 sm:px-3 py-1 rounded-full ${order.status === "delivered"
                                                 ? "bg-green-500/20 text-green-400"
                                                 : "bg-yellow-500/20 text-yellow-400"
                                                 }`}
