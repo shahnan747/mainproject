@@ -33,6 +33,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/stores", require("./routes/storeRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/analytics", require("./routes/analyticsRoutes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
 
 // 404 handler

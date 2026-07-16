@@ -10,10 +10,10 @@ export const fetchStores = async () => {
 
     console.log("Navigator online:", navigator.onLine);
 
-if (!navigator.onLine) {
-    console.log("Loading stores from IndexedDB directly");
-    return await db.stores.toArray();
-}
+    if (!navigator.onLine) {
+        console.log("Loading stores from IndexedDB directly");
+        return await db.stores.toArray();
+    }
 
     try {
         const res = await fetch(`${BASE_URL}/stores/`, {
@@ -26,16 +26,16 @@ if (!navigator.onLine) {
         const data = await res.json();
         const stores = data.data || [];
 
+        console.log("Stores from API:", stores);
+
         // Save stores to IndexedDB
+        await db.stores.clear();
+
         if (stores.length > 0) {
-
-            await db.stores.clear();
-
             await db.stores.bulkAdd(stores);
-
-            console.log("Stores saved offline:", stores.length);
-
         }
+
+        console.log("Stores saved offline:", stores.length);
 
         return stores;
     } catch (error) {

@@ -8,6 +8,7 @@ const {
   updateOrderStatus,
   assignOrder,
   deleteOrder,
+  getPendingPayments,
 } = require("../controllers/orderController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -25,6 +26,8 @@ router.route("/:id")
   .get(getOrder)
   .put(authorize("admin", "field_agent"), updateOrder)
   .delete(authorize("admin"), deleteOrder);
+
+router.get("/store/:storeId/pending-payments", getPendingPayments);
 
 
 

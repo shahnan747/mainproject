@@ -7,19 +7,9 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-import { getChartData } from "../utils/analytics";
 import { useEffect, useState } from "react";
 
-export default function ChartsSection() {
-
-    const [data, setData] = useState({
-        revenueByDate: [],
-        storeData: []
-    });
-
-    useEffect(() => {
-        setData(getChartData());
-    }, []);
+export default function ChartsSection({ revenueByDate }) {
 
     return (
         <div className="space-y-6">
@@ -30,7 +20,7 @@ export default function ChartsSection() {
 
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.revenueByDate}>
+                        <LineChart data={revenueByDate}>
                             <XAxis dataKey="date" />
                             <YAxis />
                             <Tooltip />

@@ -1,4 +1,5 @@
 const Store = require("../models/Store");
+const Order = require("../models/Order");
 
 // @desc    Get all stores
 // @route   GET /api/stores
@@ -6,7 +7,32 @@ const Store = require("../models/Store");
 const getStores = async (req, res, next) => {
   try {
     const stores = await Store.find({ isActive: true });
-    res.status(200).json({ success: true, count: stores.length, data: stores });
+
+    const storesWithPending = await Promise.all(
+      stores.map(async (store) => {
+        const pendingOrders = await Order.find({
+          storeId: store._id,
+          paymentStatus: "pending",
+        });
+
+        const totalPending = pendingOrders.reduce(
+          (sum, order) => sum + order.totalAmount,
+          0
+        );
+
+        return {
+          ...store.toObject(),
+          pendingAmount: totalPending,
+          pendingCount: pendingOrders.length,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      count: stores.length,
+      data: storesWithPending,
+    });
   } catch (error) {
     next(error);
   }

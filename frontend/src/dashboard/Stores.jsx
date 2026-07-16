@@ -214,6 +214,31 @@ export default function Stores() {
                                                 </p>
                                             )}
                                         </div>
+
+                                        {store.pendingAmount > 0 ? (
+                                            <div className="mt-3 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-[11px] text-white/50 uppercase tracking-wide">
+                                                            Outstanding
+                                                        </p>
+                                                        <p className="text-red-400 font-semibold">
+                                                            ₹{store.pendingAmount.toLocaleString()}
+                                                        </p>
+                                                    </div>
+
+                                                    <span className="text-xs bg-red-500/15 text-red-300 px-2 py-1 rounded-full">
+                                                        {store.pendingCount} unpaid
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-3 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
+                                                <p className="text-green-400 text-xs font-medium">
+                                                    ✓ No outstanding payments
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

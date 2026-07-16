@@ -15,7 +15,7 @@ export default function CreateOrder() {
     const [products, setProducts] = useState([]);
     const [quantities, setQuantities] = useState({});
 
-    const [visibleCount] = useState(3);
+    const [visibleCount, setVisibleCount] = useState(3);
     const [loading, setLoading] = useState(true);
 
     const [suggestedOrders, setSuggestedOrders] = useState([]);
@@ -35,6 +35,11 @@ export default function CreateOrder() {
     const aiStoreId = location.state?.storeId;
     const aiSuggestedItems = location.state?.suggestedItems || [];
 
+    const [pendingPayments, setPendingPayments] = useState({
+        totalPending: 0,
+        pendingOrders: [],
+    });
+
     const user = JSON.parse(localStorage.getItem("currentUser"));
     console.log("Logged user:", user);
 
@@ -51,12 +56,12 @@ export default function CreateOrder() {
         const loadProducts = async () => {
             setLoading(true);
 
-            try{
-            const data = await fetchProducts();
-             console.log("Products returned to CreateOrder:", data);
-            setProducts(data || []);
+            try {
+                const data = await fetchProducts();
+                console.log("Products returned to CreateOrder:", data);
+                setProducts(data || []);
             } finally {
-            setLoading(false);
+                setLoading(false);
             }
         };
 
@@ -167,19 +172,19 @@ export default function CreateOrder() {
 
     useEffect(() => {
 
-    const loadStores = async () => {
+        const loadStores = async () => {
 
-        const data = await fetchStores();
+            const data = await fetchStores();
 
-        console.log("Stores returned to CreateOrder:", data);
+            console.log("Stores returned to CreateOrder:", data);
 
-        setStores(data || []);
+            setStores(data || []);
 
-    };
+        };
 
-    loadStores();
+        loadStores();
 
-}, []);
+    }, []);
 
 
     const filteredStores = stores.filter((store) =>
@@ -199,6 +204,25 @@ export default function CreateOrder() {
     const totalAmount = products.reduce((total, product) => {
         return total + (quantities[product._id] || 0) * product.price;
     }, 0);
+
+    const loadPendingPayments = async (storeId) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            const res = await api.get(
+                `/orders/store/${storeId}/pending-payments`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            setPendingPayments(res.data.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const saveOrder = async (statusType) => {
         try {
@@ -222,7 +246,7 @@ export default function CreateOrder() {
 
             const orderData = {
                 storeId: selectedStore?._id,
-                 storeName: selectedStore?.name,
+                storeName: selectedStore?.name,
 
                 fieldAgentId: user?._id,
                 agentName: user?.name,
@@ -235,7 +259,7 @@ export default function CreateOrder() {
                         quantity: quantities[p._id],
                         price: p.price,
                     })),
-                    
+
                 totalAmount,
                 status: statusType.toLowerCase(),
                 orderDate: form.orderDate,
@@ -319,6 +343,8 @@ export default function CreateOrder() {
                                                 setSelectedStore(store);
                                                 setStoreSearch(store.name);
                                                 setShowDropdown(false);
+
+                                                loadPendingPayments(store._id);
                                             }}
                                         >
                                             {store.name} - {store.location}
@@ -334,6 +360,36 @@ export default function CreateOrder() {
                         >
                             + Add New Store
                         </button>
+
+                        {/* Pending Payment */}
+                        {selectedStore && (
+                            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                                <h3 className="text-red-400 font-semibold">
+                                    Pending Payments
+                                </h3>
+
+                                <p className="text-white mt-2">
+                                    Total Pending:
+                                    <span className="text-yellow-400 font-bold">
+                                        {" "}₹{pendingPayments.totalPending}
+                                    </span>
+                                </p>
+
+                                {pendingPayments.pendingOrders.length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                        {pendingPayments.pendingOrders.map((order) => (
+                                            <div
+                                                key={order._id}
+                                                className="flex justify-between text-sm text-gray-300"
+                                            >
+                                                <span>{order.orderDate?.split("T")[0]}</span>
+                                                <span>₹{order.totalAmount}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Products */}
@@ -353,42 +409,59 @@ export default function CreateOrder() {
                         {showSelector && (loading ? (
                             <p className="text-white/40">Loading...</p>
                         ) : (
-                            <div className="space-y-3">
-                                {products.slice(0, visibleCount).map((product) => (
-                                    <div
-                                        key={product._id}
-                                        className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white/5 hover:bg-white/10 p-3 sm:p-4 rounded-xl border border-white/10 transition"
-                                    >
-                                        <div className="flex items-center gap-3 sm:gap-4">
-                                            <div>
-                                                <p>{product.name}</p>
-                                                <p className="text-sm text-white/60">₹{product.price}</p>
+                            <>
+                                <div className="space-y-3">
+                                    {products.slice(0, visibleCount).map((product) => (
+                                        <div
+                                            key={product._id}
+                                            className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white/5 hover:bg-white/10 p-3 sm:p-4 rounded-xl border border-white/10 transition"
+                                        >
+                                            <div className="flex items-center gap-3 sm:gap-4">
+                                                <div>
+                                                    <p>{product.name}</p>
+                                                    <p className="text-sm text-white/60">₹{product.price}</p>
+                                                </div>
                                             </div>
+
+
+                                            <div className="flex items-center gap-2 justify-end sm:justify-normal">
+                                                <button
+                                                    className="px-3 sm:px-3 py-1 bg-white/10 rounded-lg"
+                                                    onClick={() => handleQuantityChange(product._id, -1)}
+                                                >
+                                                    -
+                                                </button>
+
+                                                <span className="px-3 sm:px-3 font-semibold text-sm sm:text-base">
+                                                    {quantities[product._id] || 0}
+                                                </span>
+
+                                                <button
+                                                    className="px-3 py-1 bg-white/10 rounded-lg"
+                                                    onClick={() => handleQuantityChange(product._id, 1)}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+
+
                                         </div>
 
+                                    ))}
+                                </div>
 
-                                        <div className="flex items-center gap-2 justify-end sm:justify-normal">
-                                            <button
-                                                className="px-3 sm:px-3 py-1 bg-white/10 rounded-lg"
-                                                onClick={() => handleQuantityChange(product._id, -1)}
-                                            >
-                                                -
-                                            </button>
+                                {/* 👇 Load More Button */}
 
-                                            <span className="px-3 sm:px-3 font-semibold text-sm sm:text-base">
-                                                {quantities[product._id] || 0}
-                                            </span>
+                                {visibleCount < products.length && (
+                                    <button
+                                        onClick={() => setVisibleCount(prev => prev + 3)}
+                                        className="mt-4 w-full bg-white/10 hover:bg-white/20 py-2 rounded-xl text-white transition"
+                                    >
+                                        Load More
+                                    </button>
+                                )}
+                            </>
 
-                                            <button
-                                                className="px-3 py-1 bg-white/10 rounded-lg"
-                                                onClick={() => handleQuantityChange(product._id, 1)}
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
                         ))}
 
 
@@ -491,7 +564,7 @@ export default function CreateOrder() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     )
 
 }
