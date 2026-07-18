@@ -3,29 +3,75 @@ import Calendar from "react-calendar";
 import { useNavigate } from "react-router-dom";
 import "react-calendar/dist/Calendar.css";
 import { fetchOrders } from "../services/deliveryService";
-
+import socket from "../socket";
 
 export default function DeliveryDashboard() {
     const [date, setDate] = useState(new Date());
 
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const [Notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const loadOrders = async () => {
-            try {
-                const data = await fetchOrders();
-                setOrders(data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const loadOrders = async () => {
+        try {
 
+            setLoading(true);
+            const data = await fetchOrders();
+            setOrders(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         loadOrders();
     }, []);
+
+    useEffect(() => {
+
+        socket.on("orderAssigned", () => {
+
+            setNotifications(prev => [
+                {
+                    id: Date.now(),
+                    message: "📦 New delivery assigned",
+                    time: new Date().toLocaleTimeString()
+                },
+                ...prev
+            ]);
+
+            loadOrders();
+
+        });
+
+        socket.on("statusUpdated", (data) => {
+
+            setNotifications(prev => [
+                {
+                    id: Date.now(),
+                    message: `✅ Status updated to ${data.status}`,
+                    time: new Date().toLocaleTimeString()
+                },
+                ...prev
+            ]);
+
+            loadOrders();
+
+        });
+
+        return () => {
+            socket.off("orderAssigned");
+            socket.off("statusUpdated");
+        };
+
+    }, []);
+
 
     // Stats
     const total = orders.length;
@@ -67,14 +113,90 @@ export default function DeliveryDashboard() {
         <div className="text-white p-4 sm:p-6">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                <h1 className="text-2xl font-bold text-yellow-400">Delivery Dashboard</h1>
 
-                <button
-                    onClick={() => navigate("/deliveries")}
-                    className="bg-[#f5c842] text-black px-4 py-2 rounded-lg font-medium hover:opacity-90 w-full sm:w-auto"                >
-                    My Deliveries
-                </button>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+
+                <h1 className="text-2xl font-bold text-yellow-400">
+                    Delivery Dashboard
+                </h1>
+
+                <div className="flex items-center gap-4">
+
+                    <button
+                        onClick={() => navigate("/deliveries")}
+                        className="bg-[#f5c842] text-black px-4 py-2 rounded-lg font-medium hover:opacity-90"
+                    >
+                        My Deliveries
+                    </button>
+
+                    <div className="relative">
+
+                        <button
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className="text-3xl"
+                        >
+                            🔔
+                        </button>
+
+                        {Notifications.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                                {Notifications.length}
+                            </span>
+                        )}
+
+                        {showNotifications && (
+
+                            <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-[#111827] rounded-xl shadow-2xl border border-white/10 z-50">
+
+                                <div className="flex justify-between items-center p-3 border-b border-white/10">
+
+                                    <h2 className="font-semibold">
+                                        Notifications
+                                    </h2>
+
+                                    <button
+                                        onClick={() => setNotifications([])}
+                                        className="text-xs text-red-400 hover:text-red-300"
+                                    >
+                                        Clear All
+                                    </button>
+
+                                </div>
+
+                                {Notifications.length === 0 ? (
+
+                                    <p className="text-gray-400 text-center py-6">
+                                        No notifications yet
+                                    </p>
+
+                                ) : (
+
+                                    Notifications.map(item => (
+
+                                        <div
+                                            key={item.id}
+                                            className="p-3 border-b border-white/10 hover:bg-white/5 transition"
+                                        >
+                                            <p>{item.message}</p>
+
+                                            <small className="text-gray-400">
+                                                {item.time}
+                                            </small>
+
+                                        </div>
+
+                                    ))
+
+                                )}
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                </div>
+
             </div>
 
             {/* Stats Cards */}

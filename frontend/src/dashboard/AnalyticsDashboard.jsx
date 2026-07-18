@@ -14,8 +14,11 @@ export default function AnalyticsDashboard() {
 
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
+
     const loadAnalytics = async () => {
+
       try {
         const data = await fetchAnalytics();
         setAnalytics(data);
@@ -28,7 +31,6 @@ export default function AnalyticsDashboard() {
 
     loadAnalytics();
   }, []);
-
 
   if (loading) {
     return (

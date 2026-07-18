@@ -57,6 +57,17 @@ const createOrder = async (req, res, next) => {
     }
 
     const order = await Order.create(req.body);
+
+
+    // Get Socket.io instance
+    const io = req.app.get("io");
+
+    // Notify all connected clients
+    io.emit("newOrder", {
+      message: "New order received",
+      order,
+    });
+
     res.status(201).json({ success: true, data: order });
   } catch (error) {
     next(error);
@@ -95,6 +106,13 @@ const updateOrderStatus = async (req, res, next) => {
     );
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
+    const io = req.app.get("io");
+
+    io.emit("statusUpdated", {
+      orderId: order._id,
+      status: order.status,
+    });
+
     res.status(200).json({ success: true, message: `Order status updated to '${status}'`, data: order });
   } catch (error) {
     next(error);
@@ -120,6 +138,14 @@ const assignOrder = async (req, res, next) => {
       }
     );
 
+    const io = req.app.get("io");
+
+    io.emit("orderAssigned", {
+      orderIds,
+      deliveryPersonnelId,
+      route,
+    });
+
     res.status(200).json({
       success: true,
       message: "Orders assigned successfully",
@@ -135,7 +161,13 @@ const assignOrder = async (req, res, next) => {
 const deleteOrder = async (req, res, next) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);
+
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    const io = req.app.get("io");
+
+    io.emit("analyticsUpdated");
+
     res.status(200).json({ success: true, message: "Order deleted successfully" });
   } catch (error) {
     next(error);

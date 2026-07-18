@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAdminOrders } from "../services/adminService";
+import socket from "../socket";
 
 export default function AdminDashboard() {
 
@@ -9,30 +10,84 @@ export default function AdminDashboard() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    const loadOrders = async () => {
+
+        try {
+
+            setLoading(true);
+            const data = await fetchAdminOrders();
+
+            setOrders(data);
+
+        } catch (error) {
+
+            console.error(error);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    useEffect(() => {
+        loadOrders();
+    }, []);
+
     useEffect(() => {
 
-        const loadOrders = async () => {
+        socket.on("newOrder", (data) => {
 
-            try {
+            setNotifications(prev => [
+                {
+                    id: Date.now(),
+                    message: data.message,
+                    time: new Date().toLocaleTimeString()
+                },
+                ...prev
+            ]);
+            console.log("📦 New order received");
+            loadOrders();
+        });
 
-                const data = await fetchAdminOrders();
+        socket.on("statusUpdated", (data) => {
 
-                setOrders(data);
+            setNotifications(prev => [
+                {
+                    id: Date.now(),
+                    message: `Order status changed to ${data.status}`,
+                    time: new Date().toLocaleTimeString()
+                },
+                ...prev
+            ]);
+            console.log("🚚 Status updated");
+            loadOrders();
+        });
 
-            } catch (error) {
+        socket.on("orderAssigned", () => {
 
-                console.error(error);
+            setNotifications(prev => [
+                {
+                    id: Date.now(),
+                    message: "Order assigned successfully",
+                    time: new Date().toLocaleTimeString()
+                },
+                ...prev
+            ]);
 
-            } finally {
+            console.log("✅ Order assigned");
+            loadOrders();
+        });
 
-                setLoading(false);
-
-            }
-
+        return () => {
+            socket.off("newOrder");
+            socket.off("statusUpdated");
+            socket.off("orderAssigned");
         };
-
-
-        loadOrders();
 
     }, []);
 
@@ -52,7 +107,73 @@ export default function AdminDashboard() {
             {/* Main Content */}
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
                 {/* Header */}
-                <h1 className="text-xl sm:text-2xl font-semibold mb-6 text-yellow-400">Dashboard</h1>
+                <div className="flex justify-between items-center mb-6">
+
+                    <h1 className="text-xl sm:text-2xl font-semibold text-yellow-400">
+                        Dashboard
+                    </h1>
+
+                    <div className="relative">
+
+                        <button
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className="text-3xl"
+                        >
+                            🔔
+                        </button>
+
+                        {notifications.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                                {notifications.length}
+                            </span>
+                        )}
+
+                        {
+                            showNotifications && (
+
+                                <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-[#111827] rounded-xl shadow-2xl border border-white/10 z-50">
+                                    <div className="flex justify-between items-center p-3 border-b border-white/10">
+                                        <h2 className="font-semibold">Notifications</h2>
+
+                                        <button
+                                            onClick={() => setNotifications([])}
+                                            className="text-xs text-red-400 hover:text-red-300"
+                                        >
+                                            Clear All
+                                        </button>
+                                    </div>
+
+                                    {
+                                        notifications.length === 0
+                                            ? <p className="text-gray-400 text-center py-6">
+                                                No notifications yet
+                                            </p>
+
+                                            : notifications.map(item => (
+
+                                                <div
+                                                    key={item.id}
+                                                    className="p-3 border-b border-white/10 hover:bg-white/5 transition"
+                                                >
+                                                    <p>{item.message}</p>
+                                                    <small className="text-gray-400">
+                                                        {item.time}
+                                                    </small>
+                                                </div>
+
+                                            ))
+                                    }
+
+                                </div>
+
+                            )}
+
+
+                    </div>
+
+
+                </div>
+
 
                 {/* Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-6">
@@ -119,7 +240,6 @@ export default function AdminDashboard() {
         </div>
     );
 }
-
 
 function Card({ title, value }) {
     return (
