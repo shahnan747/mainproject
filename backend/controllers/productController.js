@@ -17,7 +17,11 @@ const getProducts = async (req, res, next) => {
 // @access  Private
 const getProduct = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findOne({
+      _id: req.params.id,
+      isActive: true
+  });
+  
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
     res.status(200).json({ success: true, data: product });
   } catch (error) {

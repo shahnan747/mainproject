@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import Sidebar from "./Sidebar";
+import ChatWidget from "./ChatWidget";
 import { syncOfflineDrafts } from "../services/syncService"; 
 
 
@@ -36,6 +37,10 @@ export default function Layout({ children }) {
       <div className="w-full min-h-screen bg-[#111827] p-6 md:ml-64">
         {children}
       </div>
+
+      {/* Floating Chat Widget */}
+      <ChatWidget />
+
     </div>
   );
 }
