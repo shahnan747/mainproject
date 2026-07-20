@@ -7,36 +7,35 @@ export const fetchOrders = async () => {
   return res.data.data || res.data;
 };
 
-export const assignOrder = async (orderIds, deliveryPersonnelId, route) => {
+export const assignOrder = async (orderIds, deliveryPersonnelId) => {
   const res = await api.put(`/orders/assign`, {
     orderIds,
     deliveryPersonnelId,
-    route,
   });
 
   return res.data;
 };
 
 export const fetchDeliveryPersonnel = async () => {
-    try {
-        const res = await api.get("/auth/delivery-personnel");
+  try {
+    const res = await api.get("/auth/delivery-personnel");
 
-        return res.data.data || [];
+    return res.data.data || [];
 
-    } catch(error) {
-        console.error(
-            "Failed to fetch delivery personnel:",
-            error
-        );
+  } catch (error) {
+    console.error(
+      "Failed to fetch delivery personnel:",
+      error
+    );
 
-        throw error;
-    }
+    throw error;
+  }
 };
 
 export const updateOrderStatus = async (orderId, status) => {
-    const res = await api.put(`/orders/${orderId}/status`, {
-        status,
-    });
+  const res = await api.put(`/orders/${orderId}/status`, {
+    status,
+  });
 
-    return res.data;
+  return res.data;
 };

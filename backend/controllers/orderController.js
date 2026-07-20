@@ -1,4 +1,7 @@
 const Order = require("../models/Order");
+const Store = require("../models/Store");
+const User = require("../models/User");
+const sendEmail = require("../services/emailService");
 
 //Get all orders
 const getOrders = async (req, res, next) => {
@@ -58,6 +61,31 @@ const createOrder = async (req, res, next) => {
 
     const order = await Order.create(req.body);
 
+    // Get the store details
+    const store = await Store.findById(order.storeId);
+    req.body.route = store.route;
+
+    // Send confirmation email if the store has an email
+    if (store && store.email) {
+      await sendEmail({
+        to: store.email,
+        subject: "Order Successfully Placed",
+        html: `
+          <h2>FieldHub</h2>
+
+          <p>Hello ${store.name},</p>
+
+          <p>Your order has been received successfully.</p>
+
+          <p><strong>Order Total:</strong> ₹${order.totalAmount}</p>
+
+          <p><strong>Status:</strong> ${order.status}</p>
+
+          <p>Thank you for choosing FieldHub.</p>
+        `,
+      });
+    }
+
 
     // Get Socket.io instance
     const io = req.app.get("io");
@@ -73,6 +101,8 @@ const createOrder = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 // Update order
 
@@ -123,7 +153,7 @@ const updateOrderStatus = async (req, res, next) => {
 const assignOrder = async (req, res, next) => {
   try {
 
-    const { orderIds, deliveryPersonnelId, route } = req.body;
+    const { orderIds, deliveryPersonnelId } = req.body;
 
     const orders = await Order.updateMany(
       {
@@ -132,11 +162,43 @@ const assignOrder = async (req, res, next) => {
       {
         $set: {
           assignedDeliveryPersonnel: deliveryPersonnelId,
-          route,
           status: "assigned",
         },
       }
     );
+
+    const assignedOrder = await Order.findById(orderIds[0])
+      .populate("storeId", "route");
+
+    const route = assignedOrder?.storeId?.route || "Not Available";
+
+    // Get delivery person's details
+    const deliveryPerson = await User.findById(deliveryPersonnelId);
+
+    // Send email
+    if (deliveryPerson && deliveryPerson.email) {
+      try {
+        await sendEmail({
+          to: deliveryPerson.email,
+          subject: "New Delivery Assigned",
+          html: `
+        <h2>FieldHub</h2>
+
+        <p>Hello ${deliveryPerson.name},</p>
+
+        <p>You have been assigned new delivery orders.</p>
+
+        <p><strong>Route:</strong> ${route}</p>
+
+        <p><strong>Number of Orders:</strong> ${orderIds.length}</p>
+
+        <p>Please log in to your FieldHub dashboard to view the assigned orders.</p>
+      `,
+        });
+      } catch (err) {
+        console.error("Failed to send assignment email:", err.message);
+      }
+    }
 
     const io = req.app.get("io");
 

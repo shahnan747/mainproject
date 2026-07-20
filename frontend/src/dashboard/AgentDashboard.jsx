@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import api from "../api/api";
+import socket from "../socket";
 
 
 
@@ -30,23 +31,38 @@ export default function AgentDashboard() {
         return `${year}-${month}-${day}`;
     };
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                const res = await api.get("/orders", {
-                    headers: { Authorization: `Bearer ${token}`, },
-                });
 
-                console.log("ORDERS:", res.data.data);
-                setOrders(res.data.data || []);
-            } catch (err) {
-                console.error("Failed to fetch orders:", err);
-            }
-            finally { setLoading(false); }
-        };
+    const fetchOrders = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await api.get("/orders", {
+                headers: { Authorization: `Bearer ${token}`, },
+            });
+
+            console.log("ORDERS:", res.data.data);
+            setOrders(res.data.data || []);
+        } catch (err) {
+            console.error("Failed to fetch orders:", err);
+        }
+        finally { setLoading(false); }
+    };
+
+    useEffect(() => {
         fetchOrders();
     }, []);
+
+    useEffect(() => {
+        socket.on("newOrder", fetchOrders);
+        socket.on("statusUpdated", fetchOrders);
+        socket.on("orderAssigned", fetchOrders);
+
+        return () => {
+            socket.off("newOrder", fetchOrders);
+            socket.off("statusUpdated", fetchOrders);
+            socket.off("orderAssigned", fetchOrders);
+        };
+    }, []);
+
 
     const total = orders.length;
 
@@ -204,9 +220,9 @@ export default function AgentDashboard() {
                     {orders.length === 0 ? (
                         <p className="text-white/40">No orders yet</p>
                     ) : (
-                        orders.slice(-5).reverse().map((order, index) => (
+                        orders.slice(-5).reverse().map((order) => (
                             <div
-                                key={order._id || index}
+                                key={order._id}
                                 className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white/5 px-3 sm:px-4 py-3 rounded-lg mb-2"
                             >
                                 <div>

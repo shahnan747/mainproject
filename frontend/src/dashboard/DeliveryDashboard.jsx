@@ -316,7 +316,7 @@ export default function DeliveryDashboard() {
                         <p className="text-white/40">No deliveries assigned</p>
                     ) : (
                         orders
-                            .filter(o => o.route)
+                            .filter(o => o.status === "assigned")
                             .slice(-5)
                             .reverse()
                             .map((order) => (
@@ -333,7 +333,7 @@ export default function DeliveryDashboard() {
 
                                     <div className="text-left sm:text-right">
                                         <p className="text-xs sm:text-sm text-blue-400">
-                                            {order.route}
+                                            {order.storeId?.route}
                                         </p>
                                         <span
                                             className={`text-xs px-2 sm:px-3 py-1 rounded-full ${order.status === "delivered"

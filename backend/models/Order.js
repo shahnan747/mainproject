@@ -56,10 +56,6 @@ const orderSchema = new mongoose.Schema(
     paymentDate: {
       type: Date,
     },
-    route: {
-      type: String,
-      default: ""
-    },
     assignedDeliveryPersonnel: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

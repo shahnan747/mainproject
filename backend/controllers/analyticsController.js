@@ -27,7 +27,19 @@ const getAnalytics = async (req, res, next) => {
     orders.forEach((order) => {
       if (order.status !== "delivered") return;
 
-      const date = new Date(order.orderDate).toISOString().split("T")[0];
+      if (!order.orderDate) {
+        console.warn(`Order ${order._id} has no orderDate`);
+        return;
+      }
+
+      const dateObj = new Date(order.orderDate);
+
+      if (isNaN(dateObj.getTime())) {
+        console.warn(`Invalid orderDate for order ${order._id}:`, order.orderDate);
+        return;
+      }
+
+      const date = dateObj.toISOString().split("T")[0];
 
       revenueMap[date] = (revenueMap[date] || 0) + order.totalAmount;
     });

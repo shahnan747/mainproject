@@ -7,6 +7,12 @@ const storeSchema = new mongoose.Schema(
       required: [true, "Store name is required"],
       trim: true,
     },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
     location: {
       type: String,
       required: [true, "Location is required"],

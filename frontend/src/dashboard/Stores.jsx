@@ -13,6 +13,7 @@ const emptyForm = {
     contact: "",
     route: "",
     ownerName: "",
+    email: "",
 };
 
 export default function Stores() {
@@ -58,6 +59,7 @@ export default function Stores() {
             contact: store.contact || "",
             route: store.route || "",
             ownerName: store.ownerName || "",
+            email: store.email || "",
         });
         setFormError("");
         setModalOpen(true);
@@ -75,8 +77,8 @@ export default function Stores() {
     };
 
     const handleSave = async () => {
-        if (!form.name || !form.location || !form.contact || !form.route) {
-            setFormError("Name, Location, Contact and Route are required.");
+        if (!form.name || !form.location || !form.contact || !form.route || !form.email) {
+            setFormError("Name, Location, Contact, Route and Email are required.");
             return;
         }
         setSaving(true);
@@ -296,13 +298,15 @@ export default function Stores() {
                                     { label: "Contact *", name: "contact", placeholder: "e.g. 9876543210" },
                                     { label: "Route *", name: "route", placeholder: "e.g. Route A" },
                                     { label: "Owner Name", name: "ownerName", placeholder: "e.g. Ravi Kumar" },
+                                    { label: "Email", name: "email", placeholder: "e.g. Sristores@gmail.com" },
+
                                 ].map((field) => (
                                     <div key={field.name}>
                                         <label className="block text-xs text-white/50 mb-1">
                                             {field.label}
                                         </label>
                                         <input
-                                            type="text"
+                                            type={field.type || "text"}
                                             name={field.name}
                                             value={form[field.name]}
                                             onChange={handleChange}

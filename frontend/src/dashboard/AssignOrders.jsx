@@ -58,7 +58,9 @@ export default function AssignOrders() {
 
     try {
 
-      await assignOrder(selectedOrders, deliveryPerson, route);
+      await assignOrder(selectedOrders, deliveryPerson
+
+      );
 
 
       alert("Orders assigned successfully");
@@ -94,24 +96,6 @@ export default function AssignOrders() {
         </div>
 
         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
-
-          {/* Route */}
-          <div>
-            <h2 className="font-semibold mb-2 text-base sm:text-lg text-gray-300">
-              Select Route
-            </h2>
-            <select
-              className="w-full p-2.5 sm:p-3 text-sm sm:text-base bg-white/5 border border-white/10 rounded-xl text-gray-300 focus:ring-2 focus:ring-yellow-500 outline-none"
-              value={route}
-              onChange={(e) => setRoute(e.target.value)}
-            >
-              <option value="" className="bg-[#111827]">Select Route</option>
-              <option className="bg-[#111827]">Route A</option>
-              <option className="bg-[#111827]">Route B</option>
-              <option className="bg-[#111827]">Route C</option>
-              <option className="bg-[#111827]">Route D</option>
-            </select>
-          </div>
 
           {/* Orders */}
           <div>
