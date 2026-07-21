@@ -20,12 +20,12 @@ export default function MyDeliveries() {
     //Group orders by route
     const groupedRoutes = {};
     orders
-        .filter(order => order.route)
+        .filter(order => order.storeId?.route)
         .forEach(order => {
-            if (!groupedRoutes[order.route]) {
-                groupedRoutes[order.route] = [];
+            if (!groupedRoutes[order.storeId?.route]) {
+                groupedRoutes[order.storeId?.route] = [];
             }
-            groupedRoutes[order.route].push(order);
+            groupedRoutes[order.storeId?.route].push(order);
         });
 
     const markDelivered = async (id) => {
