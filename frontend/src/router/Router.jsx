@@ -44,7 +44,11 @@ const router = createBrowserRouter([
     },
     {
         path: "/order",
-        element: <CreateOrder />
+        element: <ProtectedRoute allowedRoles={["admin", "field_agent"]}>
+            <Layout>
+                <CreateOrder />
+            </Layout>
+        </ProtectedRoute>
     },
     {
         path: "/offline-drafts",
@@ -92,15 +96,30 @@ const router = createBrowserRouter([
     },
     {
         path: "/assign",
-        element: <AssignOrders />
+        element: <ProtectedRoute>
+             <Layout>
+                <AssignOrders />
+             </Layout>
+        </ProtectedRoute>
     },
     {
         path: "/analytics",
-        element: <AnalyticsDashboard />
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+            <Layout>
+                <AnalyticsDashboard />
+            </Layout>
+        </ProtectedRoute>
+        )
+        
     },
     {
         path: "/deliveries",
-        element: <MyDeliveries />
+        element: <ProtectedRoute allowedRoles={["delivery_personnel"]}>
+            <Layout>
+                <MyDeliveries />
+            </Layout>
+        </ProtectedRoute>
     },
     {
         path: "/add-stores",
