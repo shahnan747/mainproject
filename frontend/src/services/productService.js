@@ -14,7 +14,7 @@ export const fetchGroceries = async () => {
 };
 
 
-const BASE_URL = "http://localhost:5000/api/products";
+const BASE_URL = `${import.meta.env.VITE_API_URL}/products`;
 
 const getToken = () => {
     return localStorage.getItem("token") || "";
