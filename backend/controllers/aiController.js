@@ -1,9 +1,7 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const groq = require("../services/groqClient");
 const Order = require("../models/Order");
 const AIHistory = require("../models/AIHistory");
 const Product = require("../models/Product");
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // @desc    Smart Order Auto-Fill — AI suggests quantities based on store's past orders
 // @route   POST /api/ai/generate
@@ -13,7 +11,10 @@ const generateOrderSuggestion = async (req, res, next) => {
     const { storeId } = req.body;
 
     if (!storeId) {
-      return res.status(400).json({ success: false, message: "storeId is required" });
+      return res.status(400).json({
+        success: false,
+        message: "storeId is required",
+      });
     }
 
     // Fetch last 5 orders of the store
@@ -25,25 +26,37 @@ const generateOrderSuggestion = async (req, res, next) => {
     if (pastOrders.length === 0) {
       return res.status(200).json({
         success: true,
-        message: "No past orders found for this store. Cannot generate suggestion.",
+        message:
+          "No past orders found for this store. Cannot generate suggestion.",
         data: null,
       });
     }
 
-    // Build a readable summary of past orders for the AI
-    const orderSummary = pastOrders.map((order, index) => {
-      const itemList = order.items.map(
-        (item) =>
-          `${item.productId?.name || "Unknown Product"}: ${item.quantity} ${item.productId?.unit || "pcs"}`
-      ).join(", ");
-      return `Order ${index + 1} (${new Date(order.createdAt).toDateString()}): ${itemList}`;
-    }).join("\n");
+    // Build readable order history
+    const orderSummary = pastOrders
+      .map((order, index) => {
+        const itemList = order.items
+          .map(
+            (item) =>
+              `${item.productId?.name || "Unknown Product"}: ${
+                item.quantity
+              } ${item.productId?.unit || "pcs"}`
+          )
+          .join(", ");
 
-    const prompt = `You are an AI assistant for a field sales order management system.
+        return `Order ${index + 1} (${new Date(
+          order.createdAt
+        ).toDateString()}): ${itemList}`;
+      })
+      .join("\n");
 
-Based on the following past orders from a store, suggest the quantities for the next order.
+    const prompt = `
+You are an AI assistant for a field sales order management system.
 
-Return ONLY a JSON array in this format:
+Based on the following past orders from a store, suggest quantities for the next order.
+
+Return ONLY valid JSON in this format:
+
 [
   {
     "productName": "Rice",
@@ -51,24 +64,37 @@ Return ONLY a JSON array in this format:
   }
 ]
 
+Do not include markdown.
+Do not include explanations.
+Do not wrap the JSON inside \`\`\`.
+
 Past Orders:
 ${orderSummary}
+`;
 
-Provide smart suggestions based on average quantities ordered.`;
+    // Generate response using Groq
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a JSON-only assistant. Always return valid JSON arrays.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-
-    const cleaned = responseText
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+    const responseText = completion.choices[0].message.content.trim();
 
     let suggestedItems = [];
 
     try {
-      suggestedItems = JSON.parse(cleaned);
+      suggestedItems = JSON.parse(responseText);
     } catch (parseError) {
       return res.status(500).json({
         success: false,
@@ -77,12 +103,14 @@ Provide smart suggestions based on average quantities ordered.`;
       });
     }
 
-    // Convert productName → productId
+    // Convert productName -> productId
     const products = await Product.find({});
 
-    suggestedItems = suggestedItems.map(item => {
+    suggestedItems = suggestedItems.map((item) => {
       const matchedProduct = products.find(
-        p => p.name.toLowerCase() === item.productName.toLowerCase()
+        (p) =>
+          p.name.toLowerCase().trim() ===
+          item.productName.toLowerCase().trim()
       );
 
       return {
@@ -92,7 +120,7 @@ Provide smart suggestions based on average quantities ordered.`;
       };
     });
 
-    // Save to AI History
+    // Save AI history
     await AIHistory.create({
       storeId,
       requestedBy: req.user._id,
@@ -111,6 +139,7 @@ Provide smart suggestions based on average quantities ordered.`;
       },
     });
   } catch (error) {
+    console.error("Groq AI Error:", error);
     next(error);
   }
 };
@@ -120,8 +149,9 @@ Provide smart suggestions based on average quantities ordered.`;
 // @access  Private (Admin)
 const getPaymentDelayAnalytics = async (req, res, next) => {
   try {
-    const orders = await Order.find({ paymentStatus: { $in: ["pending", "overdue"] } })
-      .populate("storeId", "name location route");
+    const orders = await Order.find({
+      paymentStatus: { $in: ["pending", "overdue"] },
+    }).populate("storeId", "name location route");
 
     const storeMap = {};
 
@@ -147,7 +177,12 @@ const getPaymentDelayAnalytics = async (req, res, next) => {
       if (order.dueDate) {
         const today = new Date();
         const due = new Date(order.dueDate);
-        const delayDays = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
+
+        const delayDays = Math.max(
+          0,
+          Math.floor((today - due) / (1000 * 60 * 60 * 24))
+        );
+
         storeMap[storeId].totalDelayDays += delayDays;
       }
     });
@@ -160,7 +195,10 @@ const getPaymentDelayAnalytics = async (req, res, next) => {
           : 0,
     }));
 
-    const totalPending = analytics.reduce((sum, s) => sum + s.pendingAmount, 0);
+    const totalPending = analytics.reduce(
+      (sum, s) => sum + s.pendingAmount,
+      0
+    );
 
     res.status(200).json({
       success: true,
@@ -180,15 +218,25 @@ const getPaymentDelayAnalytics = async (req, res, next) => {
 // @access  Private
 const getAIHistory = async (req, res, next) => {
   try {
-    const history = await AIHistory.find({ storeId: req.params.storeId })
+    const history = await AIHistory.find({
+      storeId: req.params.storeId,
+    })
       .populate("requestedBy", "name email")
       .sort({ createdAt: -1 })
       .limit(10);
 
-    res.status(200).json({ success: true, count: history.length, data: history });
+    res.status(200).json({
+      success: true,
+      count: history.length,
+      data: history,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { generateOrderSuggestion, getPaymentDelayAnalytics, getAIHistory };
+module.exports = {
+  generateOrderSuggestion,
+  getPaymentDelayAnalytics,
+  getAIHistory,
+};

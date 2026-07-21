@@ -1,4 +1,4 @@
-import groq from "../utils/groqClient.js";
+const groq = require("../utils/groqClient.js");
 import { detectIntent } from "./intentDetector.js";
 import { getData } from "./queryService.js";
 import { buildPrompt } from "./promptBuilder.js";
