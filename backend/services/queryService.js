@@ -1,11 +1,13 @@
-import { getTopStore } from "./storeQueries.js";
-import { getDeliveryPerformance } from "./deliveryQueries.js";
-import { getSalesSummary } from "./analyticsQueries.js";
-import { getLowStockProducts } from "./productQueries.js";
-import { getPendingOrders } from "./orderQueries.js";
-import { getCollectedOrders } from "./orderQueries.js";
+const { getTopStore } = require("./storeQueries");
+const { getDeliveryPerformance } = require("./deliveryQueries");
+const { getSalesSummary } = require("./analyticsQueries");
+const { getLowStockProducts } = require("./productQueries");
+const {
+    getPendingOrders,
+    getCollectedOrders
+} = require("./orderQueries");
 
-export async function getData(intent) {
+const getData = async (intent) => {
 
     switch (intent) {
 
@@ -32,4 +34,5 @@ export async function getData(intent) {
 
     }
 
-}
+};
+

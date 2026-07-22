@@ -1,15 +1,11 @@
 const groq = require("../utils/groqClient.js");
-import { detectIntent } from "./intentDetector.js";
-import { getData } from "./queryService.js";
-import { buildPrompt } from "./promptBuilder.js";
+const { detectIntent } = require("./intentDetector");
+const { getData } = require("./queryService");
+const { buildPrompt } = require("./promptBuilder");
 
-export async function askAI(question) {
-
-     console.log("Question:", question);
+const askAI = async (question) => {
 
     const intent = detectIntent(question);
-
-    console.log("Detected Intent:", intent);
 
     if (intent === "GENERAL") {
 
@@ -61,3 +57,5 @@ export async function askAI(question) {
 
 }
 
+
+module.exports = { askAI };

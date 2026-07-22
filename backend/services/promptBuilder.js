@@ -1,4 +1,4 @@
-export function buildPrompt(question, data) {
+const buildPrompt = (question, data) => {
 
     return `
 You are the AI assistant for FieldHub.
@@ -16,4 +16,6 @@ ${question}
 If the data is unavailable, clearly say so without inventing facts.
 `;
 
-}
+};
+
+module.exports = { buildPrompt };

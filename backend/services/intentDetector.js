@@ -1,4 +1,4 @@
-export function detectIntent(question) {
+const detectIntent = (question) => {
 
     const q = question.toLowerCase();
 
@@ -64,4 +64,6 @@ export function detectIntent(question) {
         return "PENDING_ORDERS";
 
     return "GENERAL";
-}
+};
+
+module.exports = { detectIntent };

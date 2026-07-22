@@ -1,4 +1,4 @@
-const groq = require("../services/groqClient");
+const groq = require("../utils/groqClient");
 const Order = require("../models/Order");
 const AIHistory = require("../models/AIHistory");
 const Product = require("../models/Product");

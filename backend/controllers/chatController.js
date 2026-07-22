@@ -1,6 +1,6 @@
-import { askAI } from "../services/aiService.js";
+const { askAI } = require("../services/aiService");
 
-export const chat = async (req, res) => {
+const chat = async (req, res) => {
 
     try {
 
@@ -25,3 +25,5 @@ export const chat = async (req, res) => {
     }
 
 };
+
+module.exports = chat;
