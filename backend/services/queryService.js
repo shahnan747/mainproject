@@ -36,3 +36,5 @@ const getData = async (intent) => {
 
 };
 
+module.exports = getData;
+

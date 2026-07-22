@@ -85,7 +85,10 @@ const createOrder = async (req, res, next) => {
 
           <p>Thank you for choosing FieldHub.</p>
         `,
-      }).catch(err =>
+      }).then(() => {
+    console.log("✅ Email sent successfully");
+  })
+      .catch(err =>
         console.error("Email failed:", err)
       );
 
