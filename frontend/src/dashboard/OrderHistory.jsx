@@ -18,12 +18,14 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
 
+  const BASE_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchOrders = async () => { 
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:5000/api/orders", {
+        const res = await fetch(`${BASE_URL}/orders`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
