@@ -1,68 +1,4 @@
-import React from 'react';
-import { useEffect, useState } from "react";
-import api from "../api/api";
-
-
 export default function DashboardPreview() {
-
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const res = await api.get("/orders", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setOrders(res.data.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchOrders();
-  }, []);
-
-  // Dashboard Stats 
-  const totalOrders = orders.length;
-
-  const totalRevenue = Array.isArray(orders)
-  ?orders.reduce(
-    (sum, order) => sum + (order.totalAmount || 0),
-    0
-  ) : 0;
-
-  const totalAgents = new Set(
-    orders.map((order) => order.fieldAgentId?._id)
-  ).size;
-
-  // Fake chart values (can later come from backend analytics)
-  const chartData = [40, 60, 50, 70, 65, 80, 55];
-
-  if (loading) {
-    return (
-      <section className="px-6 py-20 bg-gradient-to-br from-[#0a0f1e] to-[#111d3e] text-center">
-        <p className="text-white">Loading dashboard...</p>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="px-6 py-20 bg-gradient-to-br from-[#0a0f1e] to-[#111d3e] text-center">
-        <p className="text-red-400">{error}</p>
-      </section>
-    )
-  }
-
   return (
     <section id="about" className="px-6 py-20 text-center bg-gradient-to-br from-[#0a0f1e] to-[#111d3e]">
 
@@ -86,23 +22,23 @@ export default function DashboardPreview() {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white/5 p-4 rounded-xl">
             <p className="text-white/40 text-xs">Orders</p>
-            <h3 className="text-white font-bold text-lg">{totalOrders}</h3>
+            <h3 className="text-white font-bold text-lg">1,200</h3>
           </div>
 
           <div className="bg-white/5 p-4 rounded-xl">
             <p className="text-white/40 text-xs">Revenue</p>
-            <h3 className="text-white font-bold text-lg">₹{totalRevenue.toLocaleString()}</h3>
+            <h3 className="text-white font-bold text-lg">₹3.2L</h3>
           </div>
 
           <div className="bg-white/5 p-4 rounded-xl">
             <p className="text-white/40 text-xs">Agents</p>
-            <h3 className="text-white font-bold text-lg">{totalAgents}</h3>
+            <h3 className="text-white font-bold text-lg">48</h3>
           </div>
         </div>
 
-        {/* Chart */}
+        {/* Fake Chart */}
         <div className="flex items-end gap-2 h-20 mb-6">
-          {chartData.map((h, i) => (
+          {[40, 60, 50, 70, 65, 80, 55].map((h, i) => (
             <div
               key={i}
               className="flex-1 bg-[#f5c842] rounded-t"
@@ -115,42 +51,26 @@ export default function DashboardPreview() {
         <div className="text-left">
           <p className="text-white/40 text-xs mb-3">Recent Orders</p>
 
-          {orders.length === 0 ? (
-            <p className="text-white/50 text-sm">
-              No orders found
-            </p>
-          ) : (
-            orders.slice(0, 5).map((order) => (
-              <div key={order._id} className="flex justify-between text-sm text-white/70 py-2 border-b border-white/10" >
+          <div className="flex justify-between text-sm text-white/70 py-2 border-b border-white/10">
+            <span>Happy Stores</span>
+            <span className="text-green-400">Delivered</span>
+            <span>₹12,400</span>
+          </div>
 
-                {/* Store Name */}
-                <span>{order.storeId?.name || "Unknown Store"}</span>
+          <div className="flex justify-between text-sm text-white/70 py-2 border-b border-white/10">
+            <span>Sharma Store</span>
+            <span className="text-blue-400">In Transit</span>
+            <span>₹8,750</span>
+          </div>
 
-                {/* Status */}
-                <span className={
-                  order.status === "Delivered"
-                    ? "text-green-400"
-                    : order.status === "Assigned"
-                      ? "text-blue-400"
-                      : order.status === "Loaded"
-                        ? "text-purple-400"
-                        : "text-yellow-400"
-                }
-                >
-                  {order.status}
-                </span>
-
-                {/* Amount */}
-                <span>
-                  ₹{order.totalAmount?.toLocaleString() || 0}
-                </span>
-              </div>
-            ))
-          )}
+          <div className="flex justify-between text-sm text-white/70 py-2">
+            <span>Gupta Traders</span>
+            <span className="text-yellow-400">Pending</span>
+            <span>₹21,200</span>
+          </div>
         </div>
 
       </div>
     </section>
   )
 }
-

@@ -58,9 +58,7 @@ export default function AssignOrders() {
 
     try {
 
-      await assignOrder(selectedOrders, deliveryPerson
-
-      );
+      await assignOrder(selectedOrders, deliveryPerson);
 
 
       alert("Orders assigned successfully");

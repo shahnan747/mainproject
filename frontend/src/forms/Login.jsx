@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateLogin } from "../utils/Validations";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import api from "../api/api";
 
 export default function Login() {
@@ -13,6 +14,7 @@ export default function Login() {
 
   const [errors, setErrors] = useState({});
   const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,10 +59,10 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="bg-white/5 border border-white/10 backdrop-blur p-8 rounded-2xl w-full max-w-md"
       >
-        <p onClick={() => navigate("/")} className="text-yellow-400 text-sm cursor-pointer hover:text-[#f5c842] mb-6" > 
-                    Back 
+        <p onClick={() => navigate("/")} className="text-yellow-400 text-sm cursor-pointer hover:text-[#f5c842] mb-6" >
+          Back
         </p>
-        
+
         <h2 className="text-white text-2xl font-bold mb-6 text-center">
           Login
         </h2>
@@ -79,14 +81,25 @@ export default function Login() {
         )}
 
         {/* Password */}
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full mb-2 p-3 rounded-lg bg-white/10 text-white outline-none"
-          onChange={(e) =>
-            setForm({ ...form, password: e.target.value })
-          }
-        />
+       <div className="relative mb-2">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={form.password}
+            className="w-full p-3 pr-12 rounded-lg bg-white/10 text-white outline-none"
+            onChange={(e) =>
+              setForm({ ...form, password: e.target.value })
+            }
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white"
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
+        </div>
         {errors.password && (
           <p className="text-red-400 text-xs mb-3">
             {errors.password}

@@ -12,7 +12,10 @@ export const generateAISuggestion = async (storeId) => {
                 Authorization: `Bearer ${getToken()}`,
             },
             body: JSON.stringify({ storeId }),
+
         });
+            
+        console.log("API URL:", BASE_URL);
         const data = await res.json();
         return data;
     } catch (error) {

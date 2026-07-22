@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { validateSignup } from "../utils/Validations";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import api from "../api/api";
 
 export default function SignUp() {
@@ -13,6 +14,7 @@ export default function SignUp() {
     });
 
     const [errors, setErrors] = useState({});
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -27,24 +29,24 @@ export default function SignUp() {
 
         try {
             const res = await api.post("/auth/register", {
-                name: form.name, 
-                email: form.email, 
+                name: form.name,
+                email: form.email,
                 password: form.password,
-                confirmPassword: form.confirmPassword, 
+                confirmPassword: form.confirmPassword,
                 role: form.role,
             });
-            
+
             console.log("Signup Success", res.data);
 
             navigate("/login");
-        }catch(err) {
+        } catch (err) {
             console.error(err);
 
-           setErrors({
-            api: err.response?.data?.message || "Signup failed",
-           });
+            setErrors({
+                api: err.response?.data?.message || "Signup failed",
+            });
         }
-       
+
     }
 
     return (
@@ -53,10 +55,10 @@ export default function SignUp() {
                 onSubmit={handleSubmit}
                 className="bg-white/5 border border-white/10 backdrop-blur p-8 rounded-2xl w-full max-w-md"
             >
-                <p onClick={() => navigate("/")} className="text-yellow-400 text-sm cursor-pointer hover:text-[#f5c842] mb-6" > 
-                    Back 
+                <p onClick={() => navigate("/")} className="text-yellow-400 text-sm cursor-pointer hover:text-[#f5c842] mb-6" >
+                    Back
                 </p>
-                
+
                 <h2 className="text-white text-2xl font-bold mb-6 text-center">
                     Sign Up
                 </h2>
@@ -101,13 +103,26 @@ export default function SignUp() {
                 </div>
 
                 {/* Password */}
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={form.password}
-                    className="w-full mb-2 p-3 rounded-lg bg-white/10 text-white"
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
+                <div className="relative mb-2">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={form.password}
+                        className="w-full p-3 pr-12 rounded-lg bg-white/10 text-white"
+                        onChange={(e) =>
+                            setForm({ ...form, password: e.target.value })
+                        }
+                    />
+
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white"
+                    >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                </div>
+
                 {errors.password && <p className="text-red-400 text-xs mb-3">{errors.password}</p>}
 
                 {/* Confirm Password */}
