@@ -31,6 +31,8 @@ export default function CreateOrder() {
 
     const selectedDate = location.state?.selectedDate;
 
+    const [savingOrder, setSavingOrder] = useState(false);
+
     const aiData = location.state;
     const aiStoreId = location.state?.storeId;
     const aiSuggestedItems = location.state?.suggestedItems || [];
@@ -51,6 +53,8 @@ export default function CreateOrder() {
         status: "Pending",
         orderDate: selectedDate || ""
     });
+
+    const BASE_URL = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
         const loadProducts = async () => {
@@ -111,7 +115,7 @@ export default function CreateOrder() {
 
             const token = localStorage.getItem("token");
 
-            const res = await fetch("http://localhost:5000/api/ai/generate", {
+            const res = await fetch(`${BASE_URL}/ai/generate`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -225,6 +229,11 @@ export default function CreateOrder() {
     };
 
     const saveOrder = async (statusType) => {
+
+        if (savingOrder) return;
+
+        setSavingOrder(true);
+
         try {
             if (!storeValidate(selectedStore)) return;
             if (!amountValidate(totalAmount)) return;
@@ -244,6 +253,11 @@ export default function CreateOrder() {
                     price: p.price,
                 }));
 
+            if (items.length === 0) {
+                alert("Please add at least one product.");
+                return;
+            }
+
             const orderData = {
                 storeId: selectedStore?._id,
                 storeName: selectedStore?.name,
@@ -251,19 +265,12 @@ export default function CreateOrder() {
                 fieldAgentId: user?._id,
                 agentName: user?.name,
 
-                items: products
-                    .filter(p => quantities[p._id] > 0)
-                    .map(p => ({
-                        productId: p._id,
-                        productName: p.name,
-                        quantity: quantities[p._id],
-                        price: p.price,
-                    })),
-
+                items,
                 totalAmount,
                 status: statusType.toLowerCase(),
                 orderDate: form.orderDate,
             };
+
             //  Only for offline drafts
 
             if (statusType.toLowerCase() === "draft" && !navigator.onLine) {
@@ -282,10 +289,15 @@ export default function CreateOrder() {
                 },
             });
 
+            alert("Order saved successfully");
+            
             navigate("/agentdashboard");
         } catch (err) {
             console.error("Failed to save order:", err);
+        } finally {
+        setSavingOrder(false);
         }
+
     };
 
 
@@ -548,16 +560,18 @@ export default function CreateOrder() {
                         <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={() => saveOrder("draft")}
+                                 disabled={savingOrder}
                                 className="w-full bg-white/10 hover:bg-white/20 py-2 rounded-xl transition"
                             >
-                                Save Draft
+                                {savingOrder ? "Saving..." : "Save Draft"}
                             </button>
 
                             <button
                                 onClick={() => saveOrder("collected")}
+                                disabled={savingOrder}
                                 className="w-full bg-yellow-400 hover:bg-yellow-300 text-black py-2 rounded-xl font-semibold transition"
                             >
-                                Submit Order
+                                {savingOrder ? "Saving..." : "Submit Order"}
                             </button>
                         </div>
 
