@@ -67,7 +67,7 @@ const createOrder = async (req, res, next) => {
 
     // Send confirmation email if the store has an email
     if (store && store.email) {
-      await sendEmail({
+      sendEmail({
         to: store.email,
         subject: "Order Successfully Placed",
         html: `
@@ -83,7 +83,10 @@ const createOrder = async (req, res, next) => {
 
           <p>Thank you for choosing FieldHub.</p>
         `,
-      });
+      }).catch(err =>
+        console.error("Email failed:", err.message)
+      );
+
     }
 
 
@@ -177,11 +180,10 @@ const assignOrder = async (req, res, next) => {
 
     // Send email
     if (deliveryPerson && deliveryPerson.email) {
-      try {
-        await sendEmail({
-          to: deliveryPerson.email,
-          subject: "New Delivery Assigned",
-          html: `
+      sendEmail({
+        to: deliveryPerson.email,
+        subject: "New Delivery Assigned",
+        html: `
         <h2>FieldHub</h2>
 
         <p>Hello ${deliveryPerson.name},</p>
@@ -194,10 +196,9 @@ const assignOrder = async (req, res, next) => {
 
         <p>Please log in to your FieldHub dashboard to view the assigned orders.</p>
       `,
-        });
-      } catch (err) {
-        console.error("Failed to send assignment email:", err.message);
-      }
+      }).catch(err =>
+        console.error("Assignment email failed:", err.message)
+      );
     }
 
     const io = req.app.get("io");
