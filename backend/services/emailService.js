@@ -1,10 +1,18 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const sendEmail = async ({ to, subject, html }) => {
-  await resend.emails.send({
-    from: "FieldHub <onboarding@resend.dev>",
+  console.log("Sending email to:", to);
+
+  return transporter.sendMail({
+    from: `"FieldHub" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,

@@ -201,6 +201,8 @@ const assignOrder = async (req, res, next) => {
 
         <p>Please log in to your FieldHub dashboard to view the assigned orders.</p>
       `,
+      }).then(() => {
+        console.log("✅ Email sent successfully");
       }).catch(err =>
         console.error("Assignment email failed:", err.message)
       );
