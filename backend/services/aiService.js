@@ -1,6 +1,6 @@
 const groq = require("../utils/groqClient.js");
 const { detectIntent } = require("./intentDetector");
-const { getData } = require("./queryService");
+const getData  = require("./queryService");
 const { buildPrompt } = require("./promptBuilder");
 
 const askAI = async (question) => {
