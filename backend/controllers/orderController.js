@@ -67,6 +67,8 @@ const createOrder = async (req, res, next) => {
 
     // Send confirmation email if the store has an email
     if (store && store.email) {
+       console.log("Sending email to:", store.email);
+
       sendEmail({
         to: store.email,
         subject: "Order Successfully Placed",
@@ -84,7 +86,7 @@ const createOrder = async (req, res, next) => {
           <p>Thank you for choosing FieldHub.</p>
         `,
       }).catch(err =>
-        console.error("Email failed:", err.message)
+        console.error("Email failed:", err)
       );
 
     }
